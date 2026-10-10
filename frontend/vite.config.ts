@@ -11,9 +11,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5173,
+    allowedHosts: ['personal-healthcare-copilot.onrender.com'],
   },
   preview: {
     host: '0.0.0.0',
     port: process.env.PORT ? parseInt(process.env.PORT, 10) : 4173,
+    allowedHosts: ['personal-healthcare-copilot.onrender.com'],
   },
 })
