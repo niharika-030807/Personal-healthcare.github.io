@@ -24,6 +24,7 @@ interface Window {
         prompt: (momentListener?: (notification: any) => void) => void;
         cancel: () => void;
       };
+      oauth2?: any;
     };
   };
 }

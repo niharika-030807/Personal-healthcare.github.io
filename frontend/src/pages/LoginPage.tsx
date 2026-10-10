@@ -112,20 +112,57 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
 
   const handleGoogleCustomClick = async () => {
     setError(null);
-    if (window.google?.accounts?.id && googleClientId) {
+    setLoading(true);
+
+    // 1. If Google OAuth2 token client is available, attempt real Google account picker popup
+    if (window.google?.accounts?.oauth2 && googleClientId) {
       try {
-        window.google.accounts.id.prompt((notification: any) => {
-          if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-            // Google One Tap was not displayed or was dismissed/origin not allowed
+        let isHandled = false;
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: 'email profile openid',
+          callback: async (tokenResponse: any) => {
+            isHandled = true;
+            if (tokenResponse?.access_token) {
+              try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userInfo = await res.json();
+                if (userInfo?.email) {
+                  await login(userInfo.email, 'demo1234', userInfo.name || 'Google User');
+                  if (onSuccess) onSuccess();
+                  else navigate('/dashboard');
+                  return;
+                }
+              } catch (e) {
+                console.warn('Failed to fetch Google user info:', e);
+              }
+            }
+            await handleDemoLogin();
+          },
+          error_callback: async (error: any) => {
+            isHandled = true;
+            console.warn('Google OAuth popup was closed or origin disallowed:', error);
+            await handleDemoLogin();
+          },
+        });
+
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+
+        // Safety timeout: if popup fails to open or is blocked by browser popup blocker
+        setTimeout(() => {
+          if (!isHandled) {
             handleDemoLogin();
           }
-        });
+        }, 3000);
         return;
       } catch (err) {
-        console.warn('Google sign-in prompt error, using demo fallback:', err);
+        console.warn('Google OAuth2 init failed, using demo sign-in:', err);
       }
     }
-    // Instant fallback if Google SDK is not loaded or OAuth is unavailable
+
+    // 2. Immediate, seamless demo sign-in fallback
     await handleDemoLogin();
   };
 
