@@ -41,6 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await fetchAuthMeApi();
       setUser(data.user);
       setPatients(data.patients);
+      localStorage.setItem('health_copilot_user', JSON.stringify(data.user));
+      localStorage.setItem('health_copilot_patients', JSON.stringify(data.patients));
       
       const savedPatientId = localStorage.getItem('health_copilot_active_patient_id');
       const selfPt = data.patients.find(p => p.relationship_type === 'Self');
@@ -50,7 +52,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setActivePatientState(target);
     } catch (err) {
-      console.error('Failed to restore session:', err);
+      console.warn('Remote auth verification unavailable, checking locally cached session:', err);
+      const cachedUser = localStorage.getItem('health_copilot_user');
+      const cachedPatients = localStorage.getItem('health_copilot_patients');
+      if (cachedUser && cachedPatients) {
+        try {
+          const u = JSON.parse(cachedUser);
+          const pts = JSON.parse(cachedPatients);
+          setUser(u);
+          setPatients(pts);
+          const savedPatientId = localStorage.getItem('health_copilot_active_patient_id');
+          const target = pts.find((p: any) => p.id === savedPatientId) || pts[0];
+          setActivePatientState(target);
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error('Failed to parse cached session', e);
+        }
+      }
       localStorage.removeItem('health_copilot_token');
       localStorage.removeItem('health_copilot_active_patient_id');
       setUser(null);
@@ -69,6 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await loginApi(email, password, fullName);
       localStorage.setItem('health_copilot_token', res.access_token);
+      localStorage.setItem('health_copilot_user', JSON.stringify(res.user));
+      localStorage.setItem('health_copilot_patients', JSON.stringify(res.patients));
       setUser(res.user);
       setPatients(res.patients);
       if (res.patients.length > 0) {
@@ -97,6 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       localStorage.setItem('health_copilot_token', 'demo_fallback_token_eleanor');
       localStorage.setItem('health_copilot_active_patient_id', mockPatient.id);
+      localStorage.setItem('health_copilot_user', JSON.stringify(mockUser));
+      localStorage.setItem('health_copilot_patients', JSON.stringify([mockPatient]));
       setUser(mockUser);
       setPatients([mockPatient]);
       setActivePatientState(mockPatient);
