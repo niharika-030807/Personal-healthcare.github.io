@@ -83,7 +83,11 @@ export const UploadPage: React.FC = () => {
     } catch (err: any) {
       clearInterval(interval);
       setIsProcessing(false);
-      setErrorMsg(err.response?.data?.detail || 'An error occurred during document processing.');
+      const detail = err.response?.data?.detail;
+      const msg = typeof detail === 'string'
+        ? detail
+        : (Array.isArray(detail) ? detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ') : err.message || 'An error occurred during document processing.');
+      setErrorMsg(msg);
     }
   };
 

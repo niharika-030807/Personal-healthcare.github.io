@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: health_copilot_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:80,http://127.0.0.1:5173
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-490503764573-q7j3ho1lbdr4tltrhglvaab8simtlls3.apps.googleusercontent.com}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/personal_health_copilot.db:/app/personal_health_copilot.db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: health_copilot_frontend
+    ports:
+      - "80:80"
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

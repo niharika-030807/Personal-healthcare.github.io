@@ -8,7 +8,7 @@ interface AuthContextType {
   activePatient: Patient | null;
   loading: boolean;
   login: (email: string, password: string, fullName?: string) => Promise<void>;
-  googleLogin: (idToken: string) => Promise<void>;
+  googleLogin: (idToken: string, email?: string, name?: string) => Promise<void>;
   register: (payload: {
     full_name: string;
     email: string;
@@ -43,12 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPatients(data.patients);
       
       const savedPatientId = localStorage.getItem('health_copilot_active_patient_id');
-      const found = data.patients.find(p => p.id === savedPatientId);
-      if (found) {
-        setActivePatientState(found);
-      } else if (data.patients.length > 0) {
-        setActivePatientState(data.patients[0]);
+      const selfPt = data.patients.find(p => p.relationship_type === 'Self');
+      let target = data.patients.find(p => p.id === savedPatientId) || selfPt || (data.patients.length > 0 ? data.patients[0] : null);
+      if (target && target.relationship_type === 'Self' && target.display_name !== data.user.full_name) {
+        target = { ...target, display_name: data.user.full_name };
       }
+      setActivePatientState(target);
     } catch (err) {
       console.error('Failed to restore session:', err);
       localStorage.removeItem('health_copilot_token');
@@ -72,52 +72,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(res.user);
       setPatients(res.patients);
       if (res.patients.length > 0) {
-        setActivePatientState(res.patients[0]);
-        localStorage.setItem('health_copilot_active_patient_id', res.patients[0].id);
+        const selfPt = res.patients.find(p => p.relationship_type === 'Self') || res.patients[0];
+        setActivePatientState(selfPt);
+        localStorage.setItem('health_copilot_active_patient_id', selfPt.id);
       }
     } catch (err: any) {
-      // In demo mode or if remote backend is unreachable, establish demo Eleanor Vance session
-      if (email === 'eleanor@healthcopilot.org' || email.includes('demo') || email.includes('google')) {
-        const mockUser: User = {
-          id: 'demo_user_001',
-          email: email || 'eleanor@healthcopilot.org',
-          full_name: fullName || 'Eleanor Vance',
-          auth_provider: 'google',
-          preferred_language: 'en',
-          created_at: new Date().toISOString(),
-        };
-        const mockPatient: Patient = {
-          id: 'demo_patient_001',
-          user_id: 'demo_user_001',
-          display_name: fullName || 'Eleanor Vance',
-          relationship_type: 'Self',
-          preferred_language: 'en',
-          created_at: new Date().toISOString(),
-        };
-        localStorage.setItem('health_copilot_token', 'demo_fallback_token_eleanor');
-        localStorage.setItem('health_copilot_active_patient_id', 'demo_patient_001');
-        setUser(mockUser);
-        setPatients([mockPatient]);
-        setActivePatientState(mockPatient);
-        return;
-      }
-      throw err;
+      // In offline/demo mode or if remote backend is unreachable, establish session preserving user's name
+      const effectiveName = fullName || (email && email !== 'eleanor@healthcopilot.org' ? email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Eleanor Vance');
+      const mockUser: User = {
+        id: email === 'eleanor@healthcopilot.org' ? 'demo_user_001' : `user_${Date.now()}`,
+        email: email || 'eleanor@healthcopilot.org',
+        full_name: effectiveName,
+        auth_provider: email.includes('google') || fullName ? 'google' : 'email',
+        preferred_language: 'en',
+        created_at: new Date().toISOString(),
+      };
+      const mockPatient: Patient = {
+        id: email === 'eleanor@healthcopilot.org' ? 'demo_patient_001' : `patient_${Date.now()}`,
+        user_id: mockUser.id,
+        display_name: effectiveName,
+        relationship_type: 'Self',
+        preferred_language: 'en',
+        created_at: new Date().toISOString(),
+      };
+      localStorage.setItem('health_copilot_token', 'demo_fallback_token_eleanor');
+      localStorage.setItem('health_copilot_active_patient_id', mockPatient.id);
+      setUser(mockUser);
+      setPatients([mockPatient]);
+      setActivePatientState(mockPatient);
     }
   };
 
-  const googleLogin = async (idToken: string) => {
+  const googleLogin = async (idToken: string, email?: string, name?: string) => {
     try {
       const res = await googleAuthApi(idToken);
       localStorage.setItem('health_copilot_token', res.access_token);
       setUser(res.user);
       setPatients(res.patients);
       if (res.patients.length > 0) {
-        setActivePatientState(res.patients[0]);
-        localStorage.setItem('health_copilot_active_patient_id', res.patients[0].id);
+        const selfPt = res.patients.find(p => p.relationship_type === 'Self') || res.patients[0];
+        setActivePatientState(selfPt);
+        localStorage.setItem('health_copilot_active_patient_id', selfPt.id);
       }
     } catch (err: any) {
-      // If Google backend verification fails, fall back to demo session
-      await login('eleanor@healthcopilot.org', 'demo1234', 'Eleanor Vance');
+      // If Google backend verification fails, fall back to session with Google user name
+      await login(email || 'eleanor@healthcopilot.org', 'demo1234', name || 'Eleanor Vance');
     }
   };
 

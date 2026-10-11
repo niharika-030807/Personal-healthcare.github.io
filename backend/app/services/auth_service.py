@@ -41,9 +41,14 @@ def create_access_token(user_id: str, email: str) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
-    """Decode and validate JWT token."""
+    """Decode and validate JWT token with support for offline demo fallback tokens."""
+    if not token:
+        return None
+    clean_token = token.strip()
+    if clean_token == "demo_fallback_token_eleanor" or clean_token.startswith("demo_fallback_"):
+        return {"sub": "demo_user_001", "email": "eleanor@healthcopilot.org"}
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(clean_token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except jwt.PyJWTError:
         return None
@@ -59,6 +64,10 @@ def get_current_user_optional(
     if not payload or "sub" not in payload:
         return None
     user = db.query(User).filter(User.id == payload["sub"]).first()
+    if not user and payload["sub"] == "demo_user_001":
+        from app.seed import seed_demo_data
+        seed_demo_data(db)
+        user = db.query(User).filter(User.id == "demo_user_001").first()
     return user
 
 def get_current_user(

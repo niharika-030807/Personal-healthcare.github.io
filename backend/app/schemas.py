@@ -17,7 +17,9 @@ class UserLogin(BaseModel):
     full_name: Optional[str] = None
 
 class GoogleLoginRequest(BaseModel):
-    id_token: str
+    id_token: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
 
 class UserSchema(BaseModel):
     id: str

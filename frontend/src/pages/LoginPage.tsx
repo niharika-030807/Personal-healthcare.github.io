@@ -130,7 +130,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                 });
                 const userInfo = await res.json();
                 if (userInfo?.email) {
-                  await login(userInfo.email, 'demo1234', userInfo.name || 'Google User');
+                  const googleName = userInfo.name || userInfo.email.split('@')[0];
+                  await login(userInfo.email, 'demo1234', googleName);
                   if (onSuccess) onSuccess();
                   else navigate('/dashboard');
                   return;
@@ -139,30 +140,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                 console.warn('Failed to fetch Google user info:', e);
               }
             }
-            await handleDemoLogin();
+            setError('Unable to retrieve Google user profile. Please sign in with your email or demo account.');
+            setLoading(false);
           },
           error_callback: async (error: any) => {
             isHandled = true;
             console.warn('Google OAuth popup was closed or origin disallowed:', error);
-            await handleDemoLogin();
+            setError('Google sign-in popup was cancelled or blocked by browser.');
+            setLoading(false);
           },
         });
 
         tokenClient.requestAccessToken({ prompt: 'select_account' });
-
-        // Safety timeout: if popup fails to open or is blocked by browser popup blocker
-        setTimeout(() => {
-          if (!isHandled) {
-            handleDemoLogin();
-          }
-        }, 3000);
         return;
       } catch (err) {
-        console.warn('Google OAuth2 init failed, using demo sign-in:', err);
+        console.warn('Google OAuth2 init failed:', err);
       }
     }
 
-    // 2. Immediate, seamless demo sign-in fallback
+    // 2. Immediate, seamless demo sign-in fallback if Google SDK unavailable
     await handleDemoLogin();
   };
 

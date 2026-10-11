@@ -9,11 +9,15 @@ export const api = axios.create({
   },
 });
 
-// Automatically attach Bearer token if logged in
+// Automatically attach Bearer token if logged in and handle FormData boundary
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('health_copilot_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // When transmitting FormData, let browser generate multipart boundary automatically
+  if (config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type'];
   }
   return config;
 });
@@ -188,9 +192,7 @@ export const uploadRecordFile = async (file: File, patientId?: string): Promise<
   if (patientId) {
     formData.append('patient_id', patientId);
   }
-  return (await api.post('/api/records/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })).data;
+  return (await api.post('/api/records/upload', formData)).data;
 };
 
 export const translateSummary = async (recordId: string, targetLanguage: string) => 

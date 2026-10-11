@@ -67,8 +67,8 @@ export const Header: React.FC<HeaderProps> = ({ currentLanguage, onSelectLanguag
               >
                 <Users className="w-4 h-4 text-teal-600" />
                 <span className="hidden sm:inline text-slate-500">Patient:</span>
-                <span className="font-bold text-teal-700 max-w-[120px] truncate">
-                  {activePatient ? activePatient.display_name : 'Select Patient'}
+                <span className="font-bold text-teal-700 max-w-[140px] truncate">
+                  {activePatient?.relationship_type === 'Self' ? user.full_name : (activePatient?.display_name || user.full_name)}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-teal-600" />
               </button>

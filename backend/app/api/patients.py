@@ -16,11 +16,27 @@ def get_current_patient(
 ):
     """Returns the current authenticated user's patient profile or fallback demo profile."""
     if current_user:
-        patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
-        if patient:
-            return patient
+        # Prefer the 'Self' patient profile to ensure matching name
+        patient = db.query(Patient).filter(Patient.user_id == current_user.id, Patient.relationship_type == "Self").first()
+        if not patient:
+            patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+        if not patient:
+            patient = Patient(
+                user_id=current_user.id,
+                display_name=current_user.full_name,
+                relationship_type="Self",
+                preferred_language=current_user.preferred_language or "en"
+            )
+            db.add(patient)
+            db.commit()
+            db.refresh(patient)
+        elif patient.relationship_type == "Self" and patient.display_name != current_user.full_name:
+            patient.display_name = current_user.full_name
+            db.commit()
+            db.refresh(patient)
+        return patient
 
-    patient = db.query(Patient).filter(Patient.user_id == "demo_user").first()
+    patient = db.query(Patient).filter(Patient.user_id == "demo_user_001").first()
     if not patient:
         patient = seed_demo_data(db)
     return patient
