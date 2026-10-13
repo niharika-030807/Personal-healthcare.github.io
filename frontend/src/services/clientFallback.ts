@@ -1071,105 +1071,177 @@ const CLINICAL_DICTIONARIES: Record<string, Record<string, string>> = {
     'When should I schedule the next checkup?': '¿Cuándo debo programar el próximo chequeo médico?',
     'Are any dietary changes recommended?': '¿Se recomienda algún cambio en la dieta?',
     'Should I take supplements for Vitamin D or B12?': '¿Debo tomar suplementos de vitamina D o B12?'
+  },
+  fr: {
+    'Total Cholesterol': 'Cholestérol total',
+    'LDL Cholesterol': 'Cholestérol LDL',
+    'HDL Cholesterol': 'Cholestérol HDL',
+    'Triglycerides': 'Triglycérides',
+    'Cholesterol': 'Cholestérol',
+    'hs-CRP': 'hs-CRP (protéine C-réactive)',
+    'Vitamin D': 'Vitamine D',
+    'Vitamin B12': 'Vitamine B12',
+    'Fasting Blood Glucose': 'Glycémie à jeun',
+    'Blood glucose': 'Glycémie',
+    'Glucose': 'Glucose',
+    'Hemoglobin': 'Hémoglobine',
+    'Blood pressure': 'Pression artérielle',
+    'Hypertension': 'Hypertension artérielle',
+    'Elevated': 'Élevé',
+    'elevated': 'élevé',
+    'deficiency': 'carence',
+    'Deficiency': 'Carence',
+    'levels are within the normal range': 'les niveaux sont dans les limites normales',
+    'within the normal range': 'dans les limites normales',
+    'within normal limits': 'dans les limites normales',
+    'suggesting possible inflammation or increased cardiovascular risk': 'suggérant une possible inflammation ou un risque cardiovasculaire accru',
+    'suggesting possible inflammation': 'suggérant une possible inflammation',
+    'increased cardiovascular risk': 'risque cardiovasculaire accru',
+    'Routine Health Check': 'Bilan de santé de routine',
+    'All parameters within normal limits': 'Tous les paramètres sont dans les limites normales',
+    'Hyperlipidemia / Dyslipidemia': 'Hyperlipidémie / Dyslipidémie',
+    'Vitamin D Deficiency': 'Carence en vitamine D',
+    'Vitamin B12 Deficiency': 'Carence en vitamine B12',
+    'Systemic Inflammation': 'Inflammation systémique',
+    'When should I schedule the next checkup?': 'Quand dois-je planifier le prochain bilan de santé ?',
+    'Are any dietary changes recommended?': 'Des modifications alimentaires sont-elles recommandées ?'
   }
 };
+
+const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const translateClinicalTextFallback = (text: string, lang: string): string => {
   if (!text || lang === 'en') return text;
   const dict = CLINICAL_DICTIONARIES[lang] || {};
 
-  // Check specific highlights direct pattern matching
+  // 1. Direct Regex Case-Insensitive Pattern Matching for common medical highlights
   if (lang === 'te') {
-    if (text.includes('Elevated Cholesterol')) {
+    if (/elevated cholesterol/i.test(text)) {
       return text
-        .replace('Elevated Cholesterol', 'కొలెస్ట్రాల్ అధికం')
-        .replace('Total Cholesterol', 'మొత్తం కొలెస్ట్రాల్')
-        .replace('LDL Cholesterol', 'LDL కొలెస్ట్రాల్');
+        .replace(/elevated cholesterol/i, 'కొలెస్ట్రాల్ అధికం')
+        .replace(/total cholesterol/i, 'మొత్తం కొలెస్ట్రాల్')
+        .replace(/ldl cholesterol/i, 'LDL కొలెస్ట్రాల్');
     }
-    if (text.includes('Elevated hs-CRP')) {
+    if (/elevated hs-crp/i.test(text)) {
       return text
-        .replace('Elevated hs-CRP', 'hs-CRP అధికం')
-        .replace('suggesting possible inflammation or increased cardiovascular risk', 'ఇది శరీరంలో వాపు (ఇన్‌ఫ్లమేషన్) లేదా గుండె సంబంధిత ముప్పు సంకేతం కావచ్చు');
+        .replace(/elevated hs-crp/i, 'hs-CRP అధికం')
+        .replace(/suggesting possible inflammation or increased cardiovascular risk/i, 'ఇది శరీరంలో వాపు (ఇన్‌ఫ్లమేషన్) లేదా గుండె సంబంధిత ముప్పు సంకేతం కావచ్చు')
+        .replace(/suggesting possible inflammation/i, 'శరీరంలో వాపు ఉండవచ్చని సూచిస్తుంది');
     }
-    if (text.includes('Vitamin D deficiency')) {
-      return text.replace('Vitamin D deficiency', 'విటమిన్ డి లోపం');
+    if (/vitamin d deficiency/i.test(text)) {
+      return text.replace(/vitamin d deficiency/i, 'విటమిన్ డి లోపం');
     }
-    if (text.includes('Vitamin B12 deficiency')) {
-      return text.replace('Vitamin B12 deficiency', 'విటమిన్ బి12 లోపం');
+    if (/vitamin b12 deficiency/i.test(text)) {
+      return text.replace(/vitamin b12 deficiency/i, 'విటమిన్ బి12 లోపం');
     }
-    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
-      return text.replace('Blood glucose levels are within the normal range', 'రక్తంలో గ్లూకోజ్ స్థాయిలు సాధారణ పరిధిలో ఉన్నాయి');
+    if (/blood glucose levels are within the normal range/i.test(text) || /blood glucose/i.test(text)) {
+      return text
+        .replace(/blood glucose levels are within the normal range/i, 'రక్తంలో గ్లూకోజ్ స్థాయిలు సాధారణ పరిధిలో ఉన్నాయి')
+        .replace(/levels are within the normal range/i, 'స్థాయిలు సాధారణ పరిధిలో ఉన్నాయి')
+        .replace(/blood glucose/i, 'రక్తంలో గ్లూకోజ్');
     }
   } else if (lang === 'hi') {
-    if (text.includes('Elevated Cholesterol')) {
+    if (/elevated cholesterol/i.test(text)) {
       return text
-        .replace('Elevated Cholesterol', 'उच्च कोलेस्ट्रॉल')
-        .replace('Total Cholesterol', 'कुल कोलेस्ट्रॉल')
-        .replace('LDL Cholesterol', 'एलडीएल कोलेस्ट्रॉल');
+        .replace(/elevated cholesterol/i, 'उच्च कोलेस्ट्रॉल')
+        .replace(/total cholesterol/i, 'कुल कोलेस्ट्रॉल')
+        .replace(/ldl cholesterol/i, 'एलडीएल कोलेस्ट्रॉल');
     }
-    if (text.includes('Elevated hs-CRP')) {
+    if (/elevated hs-crp/i.test(text)) {
       return text
-        .replace('Elevated hs-CRP', 'बढ़ा हुआ hs-CRP')
-        .replace('suggesting possible inflammation or increased cardiovascular risk', 'जो संभावित सूजन या बढ़े हुए हृदय जोखिम का संकेत देता है');
+        .replace(/elevated hs-crp/i, 'बढ़ा हुआ hs-CRP')
+        .replace(/suggesting possible inflammation or increased cardiovascular risk/i, 'जो संभावित सूजन या बढ़े हुए हृदय जोखिम का संकेत देता है');
     }
-    if (text.includes('Vitamin D deficiency')) {
-      return text.replace('Vitamin D deficiency', 'विटामिन डी की कमी');
+    if (/vitamin d deficiency/i.test(text)) {
+      return text.replace(/vitamin d deficiency/i, 'विटामिन डी की कमी');
     }
-    if (text.includes('Vitamin B12 deficiency')) {
-      return text.replace('Vitamin B12 deficiency', 'विटामिन बी12 की कमी');
+    if (/vitamin b12 deficiency/i.test(text)) {
+      return text.replace(/vitamin b12 deficiency/i, 'विटामिन बी12 की कमी');
     }
-    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
-      return text.replace('Blood glucose levels are within the normal range', 'रक्त शर्करा (ग्लूकोज) का स्तर सामान्य सीमा के भीतर है');
+    if (/blood glucose levels are within the normal range/i.test(text) || /blood glucose/i.test(text)) {
+      return text
+        .replace(/blood glucose levels are within the normal range/i, 'रक्त शर्करा (ग्लूकोज) का स्तर सामान्य सीमा के भीतर है')
+        .replace(/levels are within the normal range/i, 'स्तर सामान्य सीमा के भीतर हैं')
+        .replace(/blood glucose/i, 'रक्त ग्लूकोज');
     }
   } else if (lang === 'ta') {
-    if (text.includes('Elevated Cholesterol')) {
+    if (/elevated cholesterol/i.test(text)) {
       return text
-        .replace('Elevated Cholesterol', 'அதிகரித்த கொலஸ்ட்ரால்')
-        .replace('Total Cholesterol', 'மொத்த கொலஸ்ட்ரால்')
-        .replace('LDL Cholesterol', 'எல்டிஎல் கொலஸ்ட்ரால்');
+        .replace(/elevated cholesterol/i, 'அதிகரித்த கொலஸ்ட்ரால்')
+        .replace(/total cholesterol/i, 'மொத்த கொலஸ்ட்ரால்')
+        .replace(/ldl cholesterol/i, 'எல்டிஎல் கொலஸ்ட்ரால்');
     }
-    if (text.includes('Elevated hs-CRP')) {
+    if (/elevated hs-crp/i.test(text)) {
       return text
-        .replace('Elevated hs-CRP', 'அதிகரித்த hs-CRP')
-        .replace('suggesting possible inflammation or increased cardiovascular risk', 'சாத்தியமான வீக்கம் அல்லது இதய நோய் அபாயத்தைக் குறிக்கிறது');
+        .replace(/elevated hs-crp/i, 'அதிகரித்த hs-CRP')
+        .replace(/suggesting possible inflammation or increased cardiovascular risk/i, 'சாத்தியமான வீக்கம் அல்லது இதய நோய் அபாயத்தைக் குறிக்கிறது');
     }
-    if (text.includes('Vitamin D deficiency')) {
-      return text.replace('Vitamin D deficiency', 'வைட்டமின் டி குறைபாடு');
+    if (/vitamin d deficiency/i.test(text)) {
+      return text.replace(/vitamin d deficiency/i, 'வைட்டமின் டி குறைபாடு');
     }
-    if (text.includes('Vitamin B12 deficiency')) {
-      return text.replace('Vitamin B12 deficiency', 'வைட்டமின் பி12 குறைபாடு');
+    if (/vitamin b12 deficiency/i.test(text)) {
+      return text.replace(/vitamin b12 deficiency/i, 'வைட்டமின் பி12 குறைபாடு');
     }
-    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
-      return text.replace('Blood glucose levels are within the normal range', 'இரத்த குளுக்கோஸ் அளவுகள் இயல்பான வரம்பிற்குள் உள்ளன');
+    if (/blood glucose levels are within the normal range/i.test(text) || /blood glucose/i.test(text)) {
+      return text
+        .replace(/blood glucose levels are within the normal range/i, 'இரத்த குளுக்கோஸ் அளவுகள் இயல்பான வரம்பிற்குள் உள்ளன')
+        .replace(/levels are within the normal range/i, 'அளவுகள் இயல்பான வரம்பிற்குள் உள்ளன')
+        .replace(/blood glucose/i, 'இரத்த குளுக்கோஸ்');
     }
   } else if (lang === 'es') {
-    if (text.includes('Elevated Cholesterol')) {
+    if (/elevated cholesterol/i.test(text)) {
       return text
-        .replace('Elevated Cholesterol', 'Colesterol elevado')
-        .replace('Total Cholesterol', 'Colesterol total')
-        .replace('LDL Cholesterol', 'Colesterol LDL');
+        .replace(/elevated cholesterol/i, 'Colesterol elevado')
+        .replace(/total cholesterol/i, 'Colesterol total')
+        .replace(/ldl cholesterol/i, 'Colesterol LDL');
     }
-    if (text.includes('Elevated hs-CRP')) {
+    if (/elevated hs-crp/i.test(text)) {
       return text
-        .replace('Elevated hs-CRP', 'hs-CRP elevado')
-        .replace('suggesting possible inflammation or increased cardiovascular risk', 'lo que sugiere posible inflamación o aumento del riesgo cardiovascular');
+        .replace(/elevated hs-crp/i, 'hs-CRP elevado')
+        .replace(/suggesting possible inflammation or increased cardiovascular risk/i, 'lo que sugiere posible inflamación o aumento del riesgo cardiovascular');
     }
-    if (text.includes('Vitamin D deficiency')) {
-      return text.replace('Vitamin D deficiency', 'Deficiencia de vitamina D');
+    if (/vitamin d deficiency/i.test(text)) {
+      return text.replace(/vitamin d deficiency/i, 'Deficiencia de vitamina D');
     }
-    if (text.includes('Vitamin B12 deficiency')) {
-      return text.replace('Vitamin B12 deficiency', 'Deficiencia de vitamina B12');
+    if (/vitamin b12 deficiency/i.test(text)) {
+      return text.replace(/vitamin b12 deficiency/i, 'Deficiencia de vitamina B12');
     }
-    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
-      return text.replace('Blood glucose levels are within the normal range', 'Los niveles de glucosa en sangre están dentro del rango normal');
+    if (/blood glucose levels are within the normal range/i.test(text) || /blood glucose/i.test(text)) {
+      return text
+        .replace(/blood glucose levels are within the normal range/i, 'Los niveles de glucosa en sangre están dentro del rango normal')
+        .replace(/levels are within the normal range/i, 'los niveles están dentro del rango normal')
+        .replace(/blood glucose/i, 'glucosa en sangre');
+    }
+  } else if (lang === 'fr') {
+    if (/elevated cholesterol/i.test(text)) {
+      return text
+        .replace(/elevated cholesterol/i, 'Cholestérol élevé')
+        .replace(/total cholesterol/i, 'Cholestérol total')
+        .replace(/ldl cholesterol/i, 'Cholestérol LDL');
+    }
+    if (/elevated hs-crp/i.test(text)) {
+      return text
+        .replace(/elevated hs-crp/i, 'hs-CRP élevé')
+        .replace(/suggesting possible inflammation or increased cardiovascular risk/i, 'suggérant une possible inflammation ou un risque cardiovasculaire accru');
+    }
+    if (/vitamin d deficiency/i.test(text)) {
+      return text.replace(/vitamin d deficiency/i, 'Carence en vitamine D');
+    }
+    if (/vitamin b12 deficiency/i.test(text)) {
+      return text.replace(/vitamin b12 deficiency/i, 'Carence en vitamine B12');
+    }
+    if (/blood glucose levels are within the normal range/i.test(text) || /blood glucose/i.test(text)) {
+      return text.replace(/blood glucose levels are within the normal range/i, 'La glycémie se situe dans les limites normales');
     }
   }
 
-  // Token-by-token replacement
+  // 2. Token-by-token replacement sorted by length descending so multi-word phrases match first
   let translated = text;
-  for (const [enTerm, targetTerm] of Object.entries(dict)) {
-    if (translated.includes(enTerm)) {
-      translated = translated.split(enTerm).join(targetTerm);
+  const sortedEntries = Object.entries(dict).sort((a, b) => b[0].length - a[0].length);
+  for (const [enTerm, targetTerm] of sortedEntries) {
+    const regex = new RegExp(escapeRegex(enTerm), 'gi');
+    if (regex.test(translated)) {
+      translated = translated.replace(regex, targetTerm);
     }
   }
   return translated;

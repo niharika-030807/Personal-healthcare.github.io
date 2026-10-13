@@ -78,7 +78,7 @@ export const RecordDetailPage: React.FC = () => {
 
   const handleTranslate = async (langCode: string) => {
     if (!record) return;
-    await handleTranslateForRecord(record.id, langCode);
+    await handleTranslateForRecord(record.id, langCode, record.summaries?.[0]?.summary_json);
   };
 
   const handleExportFhir = async () => {
