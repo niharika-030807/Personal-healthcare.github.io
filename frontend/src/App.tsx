@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AssistantProvider } from './context/AssistantContext';
+import { AIBotAssistant } from './components/AIBotAssistant';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { DisclaimerBanner } from './components/DisclaimerBanner';
@@ -85,6 +87,9 @@ const ProtectedLayout: React.FC<{
           </Routes>
         </main>
       </div>
+
+      {/* Floating AI Bot Assistant */}
+      <AIBotAssistant />
     </div>
   );
 };
@@ -132,7 +137,9 @@ export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppContent />
+        <AssistantProvider>
+          <AppContent />
+        </AssistantProvider>
       </AuthProvider>
     </ThemeProvider>
   );

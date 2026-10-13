@@ -2,10 +2,11 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Activity, Upload, FileText, Clock, TrendingUp, UserCheck, 
-  ShieldCheck, Settings, X, LogIn, LogOut 
+  ShieldCheck, Settings, X, LogIn, LogOut, Sparkles 
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { useAssistant } from '../context/AssistantContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const { user, logout, personalProfile } = useAuth();
+  const { setIsOpen: setIsAssistantOpen } = useAssistant();
 
   const navItems = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: Activity },
@@ -90,6 +92,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </Link>
             );
           })}
+
+          {/* AI Bot Assistant Item in the Left Stack */}
+          <div className="pt-2 mt-2 border-t border-slate-800/80">
+            <button
+              onClick={() => {
+                setIsAssistantOpen(true);
+                onClose();
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-teal-500/15 via-emerald-500/10 to-transparent hover:from-teal-500/25 border border-teal-500/30 text-teal-300 font-bold text-xs transition-all group shadow-xs cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative shrink-0">
+                  <img 
+                    src="/bot-mascot.png" 
+                    alt="AI Health Bot" 
+                    className="w-7 h-7 rounded-full object-cover border border-teal-400/80 bg-white shadow-xs group-hover:scale-110 transition-transform"
+                  />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-slate-900"></span>
+                </div>
+                <div className="truncate">
+                  <span className="block text-slate-100 group-hover:text-white transition">Copilot Buddy</span>
+                  <span className="text-[10px] text-teal-400 font-normal block">AI Health Assistant</span>
+                </div>
+              </div>
+              <Sparkles className="w-4 h-4 text-teal-400 shrink-0 group-hover:rotate-12 transition-transform" />
+            </button>
+          </div>
         </nav>
 
         {/* User Account / Sign In / Sign Out Actions */}
