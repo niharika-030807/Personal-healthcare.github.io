@@ -903,12 +903,363 @@ export const processMedicalDocumentClientFallback = async (
 
 
 
+// --- CLINICAL MULTI-LINGUAL TRANSLATION SYSTEM ---
+
+const CLINICAL_DICTIONARIES: Record<string, Record<string, string>> = {
+  te: {
+    // Medical & Lab parameters
+    'Total Cholesterol': 'మొత్తం కొలెస్ట్రాల్',
+    'LDL Cholesterol': 'LDL (చెడు) కొలెస్ట్రాల్',
+    'HDL Cholesterol': 'HDL (మంచి) కొలెస్ట్రాల్',
+    'Triglycerides': 'ట్రైగ్లిజరైడ్స్',
+    'Cholesterol': 'కొలెస్ట్రాల్',
+    'hs-CRP': 'hs-CRP (ఇన్‌ఫ్లమేషన్ పరీక్ష)',
+    'Vitamin D': 'విటమిన్ డి',
+    'Vitamin B12': 'విటమిన్ బి12',
+    'Fasting Blood Glucose': 'ఖాళీ కడుపున రక్తంలో గ్లూకోజ్',
+    'Blood glucose': 'రక్తంలో గ్లూకోజ్',
+    'Glucose': 'గ్లూకోజ్',
+    'Hemoglobin': 'హీమోగ్లోబిన్',
+    'Blood pressure': 'రక్తపోటు',
+    'Hypertension': 'హైపర్‌టెన్షన్ (అధిక రక్తపోటు)',
+    'Thyroid Stimulating Hormone (TSH)': 'థైరాయిడ్ హార్మోన్ (TSH)',
+    'TSH': 'థైరాయిడ్ హార్మోన్ (TSH)',
+    // Conditions & qualifiers
+    'Elevated': 'అధికం (పెరిగింది)',
+    'elevated': 'అధికం (పెరిగింది)',
+    'deficiency': 'లోపం',
+    'Deficiency': 'లోపం',
+    'levels are within the normal range': 'స్థాయిలు సాధారణ పరిధిలో ఉన్నాయి',
+    'levels within normal range': 'స్థాయిలు సాధారణ పరిధిలో ఉన్నాయి',
+    'within the normal range': 'సాధారణ పరిధిలో ఉన్నాయి',
+    'within normal limits': 'సాధారణ పరిమితులలో ఉన్నాయి',
+    'within safe ranges': 'సురక్షిత పరిధిలో ఉన్నాయి',
+    'suggesting possible inflammation or increased cardiovascular risk': 'ఇది శరీరంలో వాపు లేదా గుండె సంబంధిత ముప్పు సంకేతం కావచ్చు',
+    'suggesting possible inflammation': 'శరీరంలో వాపు (ఇన్‌ఫ్లమేషన్) ఉండవచ్చని సూచిస్తుంది',
+    'increased cardiovascular risk': 'గుండె సంబంధిత ముప్పు పెరిగే అవకాశం ఉంది',
+    'Routine Health Check': 'సాధారణ ఆరోగ్య పరీక్ష',
+    'Standard health check completed': 'ప్రామాణిక ఆరోగ్య పరీక్ష పూర్తయింది',
+    'All parameters within normal limits': 'అన్ని పరీక్షా ఫలితాలు సాధారణ పరిమితులలో ఉన్నాయి',
+    'Hyperlipidemia / Dyslipidemia': 'హైపర్‌లిపిడెమియా (అధిక కొలెస్ట్రాల్)',
+    'Vitamin D Deficiency': 'విటమిన్ డి లోపం',
+    'Vitamin B12 Deficiency': 'విటమిన్ బి12 లోపం',
+    'Systemic Inflammation': 'సిస్టమిక్ ఇన్‌ఫ్లమేషన్ (శరీరంలో వాపు)',
+    'Mild Anemia': 'స్వల్ప రక్తహీనత',
+    'When should I schedule the next checkup?': 'నేను తదుపరి వైద్య పరీక్షను ఎప్పుడు షెడ్యూల్ చేసుకోవాలి?',
+    'Are any dietary changes recommended?': 'నా ఆహారపు అలవాట్లలో ఏవైనా మార్పులు చేయాలా?',
+    'Should I take supplements for Vitamin D or B12?': 'నేను విటమిన్ డి లేదా బి12 సప్లిమెంట్లు తీసుకోవాలా?'
+  },
+  hi: {
+    'Total Cholesterol': 'कुल कोलेस्ट्रॉल',
+    'LDL Cholesterol': 'एलडीएल (खराब) कोलेस्ट्रॉल',
+    'HDL Cholesterol': 'एचडीएल (अच्छा) कोलेस्ट्रॉल',
+    'Triglycerides': 'ट्राइग्लिसराइड्स',
+    'Cholesterol': 'कोलेस्ट्रॉल',
+    'hs-CRP': 'hs-CRP (सूजन परीक्षण)',
+    'Vitamin D': 'विटामिन डी',
+    'Vitamin B12': 'विटामिन बी12',
+    'Fasting Blood Glucose': 'फास्टिंग ब्लड ग्लूकोज',
+    'Blood glucose': 'रक्त ग्लूकोज (शर्करा)',
+    'Glucose': 'ग्लूकोज',
+    'Hemoglobin': 'हीमोग्लोबिन',
+    'Blood pressure': 'रक्तचाप',
+    'Hypertension': 'उच्च रक्तचाप (हाइपरटेंशन)',
+    'Thyroid Stimulating Hormone (TSH)': 'थायराइड हार्मोन (TSH)',
+    'TSH': 'थायराइड हार्मोन (TSH)',
+    'Elevated': 'बढ़ा हुआ (उच्च)',
+    'elevated': 'बढ़ा हुआ (उच्च)',
+    'deficiency': 'की कमी',
+    'Deficiency': 'की कमी',
+    'levels are within the normal range': 'स्तर सामान्य सीमा के भीतर हैं',
+    'levels within normal range': 'स्तर सामान्य सीमा के भीतर हैं',
+    'within the normal range': 'सामान्य सीमा के भीतर है',
+    'within normal limits': 'सामान्य सीमा के भीतर हैं',
+    'within safe ranges': 'सुरक्षित सीमा के भीतर हैं',
+    'suggesting possible inflammation or increased cardiovascular risk': 'जो संभावित सूजन या बढ़े हुए हृदय संबंधी जोखिम का संकेत देता है',
+    'suggesting possible inflammation': 'संभावित सूजन का संकेत देता है',
+    'increased cardiovascular risk': 'हृदय संबंधी जोखिम में वृद्धि',
+    'Routine Health Check': 'नियमित स्वास्थ्य जांच',
+    'Standard health check completed': 'मानक स्वास्थ्य जांच पूरी हुई',
+    'All parameters within normal limits': 'सभी पैरामीटर सामान्य सीमा के भीतर हैं',
+    'Hyperlipidemia / Dyslipidemia': 'हाइपरलिपिडेमिया (उच्च कोलेस्ट्रॉल)',
+    'Vitamin D Deficiency': 'विटामिन डी की कमी',
+    'Vitamin B12 Deficiency': 'विटामिन बी12 की कमी',
+    'Systemic Inflammation': 'प्रणालीगत सूजन (सिस्टेमिक इन्फ्लेमेशन)',
+    'Mild Anemia': 'हल्का एनीमिया (खून की कमी)',
+    'When should I schedule the next checkup?': 'मुझे अपनी अगली स्वास्थ्य जांच कब निर्धारित करनी चाहिए?',
+    'Are any dietary changes recommended?': 'क्या किसी आहार संबंधी बदलाव की सिफारिश की गई है?',
+    'Should I take supplements for Vitamin D or B12?': 'क्या मुझे विटामिन डी या बी12 की खुराक लेनी चाहिए?'
+  },
+  ta: {
+    'Total Cholesterol': 'மொத்த கொலஸ்ட்ரால்',
+    'LDL Cholesterol': 'எல்டிஎல் (கெட்ட) கொலஸ்ட்ரால்',
+    'HDL Cholesterol': 'எச்டிஎல் (நல்ல) கொலஸ்ட்ரால்',
+    'Triglycerides': 'டிரைகிளிசரைடுகள்',
+    'Cholesterol': 'கொலஸ்ட்ரால்',
+    'hs-CRP': 'hs-CRP (வீக்கப் பரிசோதனை)',
+    'Vitamin D': 'வைட்டமின் டி',
+    'Vitamin B12': 'வைட்டமின் பி12',
+    'Fasting Blood Glucose': 'வெறும் வயிற்று இரத்த குளுக்கோஸ்',
+    'Blood glucose': 'இரத்த குளுக்கோஸ்',
+    'Glucose': 'குளுக்கோஸ்',
+    'Hemoglobin': 'ஹீமோகுளோபின்',
+    'Blood pressure': 'இரத்த அழுத்தம்',
+    'Hypertension': 'உயர் இரத்த அழுத்தம்',
+    'Thyroid Stimulating Hormone (TSH)': 'தைராய்டு ஹார்மோன் (TSH)',
+    'TSH': 'தைராய்டு ஹார்மோன் (TSH)',
+    'Elevated': 'அதிகரித்த (உயர்)',
+    'elevated': 'அதிகரித்த (உயர்)',
+    'deficiency': 'குறைபாடு',
+    'Deficiency': 'குறைபாடு',
+    'levels are within the normal range': 'அளவுகள் இயல்பான வரம்பிற்குள் உள்ளன',
+    'levels within normal range': 'அளவுகள் இயல்பான வரம்பிற்குள் உள்ளன',
+    'within the normal range': 'இயல்பான வரம்பிற்குள் உள்ளது',
+    'within normal limits': 'இயல்பான வரம்பிற்குள் உள்ளன',
+    'within safe ranges': 'பாதுகாப்பான வரம்பிற்குள் உள்ளன',
+    'suggesting possible inflammation or increased cardiovascular risk': 'சாத்தியமான வீக்கம் அல்லது அதிகரித்த இதய நோய் அபாயத்தைக் குறிக்கிறது',
+    'suggesting possible inflammation': 'சாத்தியமான உடல் வீக்கத்தைக் குறிக்கிறது',
+    'increased cardiovascular risk': 'அதிகரித்த இதய நோய் அபாயம்',
+    'Routine Health Check': 'வழக்கமான சுகாதார பரிசோதனை',
+    'Standard health check completed': 'நிலையான சுகாதார பரிசோதனை நிறைவடைந்தது',
+    'All parameters within normal limits': 'அனைத்து அளவுகளும் இயல்பான வரம்பிற்குள் உள்ளன',
+    'Hyperlipidemia / Dyslipidemia': 'ஹைப்பர்லிபிடெமியா (அதிக கொலஸ்ட்ரால்)',
+    'Vitamin D Deficiency': 'வைட்டமின் டி குறைபாடு',
+    'Vitamin B12 Deficiency': 'வைட்டமின் பி12 குறைபாடு',
+    'Systemic Inflammation': 'உடல் அழற்சி / வீக்கம்',
+    'Mild Anemia': 'லேசான இரத்த சோகை',
+    'When should I schedule the next checkup?': 'அடுத்த பரிசோதனையை நான் எப்போது திட்டமிட வேண்டும்?',
+    'Are any dietary changes recommended?': 'உணவு முறையில் ஏதேனும் மாற்றங்கள் பரிந்துரைக்கப்படுகிறதா?',
+    'Should I take supplements for Vitamin D or B12?': 'வைட்டமின் டி அல்லது பி12 மாத்திரைகளை நான் எடுத்துக்கொள்ள வேண்டுமா?'
+  },
+  es: {
+    'Total Cholesterol': 'Colesterol Total',
+    'LDL Cholesterol': 'Colesterol LDL',
+    'HDL Cholesterol': 'Colesterol HDL',
+    'Triglycerides': 'Triglicéridos',
+    'Cholesterol': 'Colesterol',
+    'hs-CRP': 'hs-CRP (Proteína C reactiva)',
+    'Vitamin D': 'Vitamina D',
+    'Vitamin B12': 'Vitamina B12',
+    'Fasting Blood Glucose': 'Glucosa en sangre en ayunas',
+    'Blood glucose': 'Glucosa en sangre',
+    'Glucose': 'Glucosa',
+    'Hemoglobin': 'Hemoglobina',
+    'Blood pressure': 'Presión arterial',
+    'Hypertension': 'Hipertensión',
+    'Thyroid Stimulating Hormone (TSH)': 'Hormona estimulante de la tiroides (TSH)',
+    'TSH': 'Hormona TSH',
+    'Elevated': 'Elevado(a)',
+    'elevated': 'elevado(a)',
+    'deficiency': 'deficiencia',
+    'Deficiency': 'Deficiencia',
+    'levels are within the normal range': 'los niveles están dentro del rango normal',
+    'levels within normal range': 'niveles dentro del rango normal',
+    'within the normal range': 'dentro del rango normal',
+    'within normal limits': 'dentro de los límites normales',
+    'within safe ranges': 'dentro de rangos seguros',
+    'suggesting possible inflammation or increased cardiovascular risk': 'lo que sugiere posible inflamación o aumento del riesgo cardiovascular',
+    'suggesting possible inflammation': 'sugiriendo posible inflamación',
+    'increased cardiovascular risk': 'mayor riesgo cardiovascular',
+    'Routine Health Check': 'Chequeo de salud de rutina',
+    'Standard health check completed': 'Chequeo de salud estándar completado',
+    'All parameters within normal limits': 'Todos los parámetros están dentro de los límites normales',
+    'Hyperlipidemia / Dyslipidemia': 'Hiperlipidemia / Dislipidemia',
+    'Vitamin D Deficiency': 'Deficiencia de vitamina D',
+    'Vitamin B12 Deficiency': 'Deficiencia de vitamina B12',
+    'Systemic Inflammation': 'Inflamación sistémica',
+    'Mild Anemia': 'Anemia leve',
+    'When should I schedule the next checkup?': '¿Cuándo debo programar el próximo chequeo médico?',
+    'Are any dietary changes recommended?': '¿Se recomienda algún cambio en la dieta?',
+    'Should I take supplements for Vitamin D or B12?': '¿Debo tomar suplementos de vitamina D o B12?'
+  }
+};
+
+const translateClinicalTextFallback = (text: string, lang: string): string => {
+  if (!text || lang === 'en') return text;
+  const dict = CLINICAL_DICTIONARIES[lang] || {};
+
+  // Check specific highlights direct pattern matching
+  if (lang === 'te') {
+    if (text.includes('Elevated Cholesterol')) {
+      return text
+        .replace('Elevated Cholesterol', 'కొలెస్ట్రాల్ అధికం')
+        .replace('Total Cholesterol', 'మొత్తం కొలెస్ట్రాల్')
+        .replace('LDL Cholesterol', 'LDL కొలెస్ట్రాల్');
+    }
+    if (text.includes('Elevated hs-CRP')) {
+      return text
+        .replace('Elevated hs-CRP', 'hs-CRP అధికం')
+        .replace('suggesting possible inflammation or increased cardiovascular risk', 'ఇది శరీరంలో వాపు (ఇన్‌ఫ్లమేషన్) లేదా గుండె సంబంధిత ముప్పు సంకేతం కావచ్చు');
+    }
+    if (text.includes('Vitamin D deficiency')) {
+      return text.replace('Vitamin D deficiency', 'విటమిన్ డి లోపం');
+    }
+    if (text.includes('Vitamin B12 deficiency')) {
+      return text.replace('Vitamin B12 deficiency', 'విటమిన్ బి12 లోపం');
+    }
+    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
+      return text.replace('Blood glucose levels are within the normal range', 'రక్తంలో గ్లూకోజ్ స్థాయిలు సాధారణ పరిధిలో ఉన్నాయి');
+    }
+  } else if (lang === 'hi') {
+    if (text.includes('Elevated Cholesterol')) {
+      return text
+        .replace('Elevated Cholesterol', 'उच्च कोलेस्ट्रॉल')
+        .replace('Total Cholesterol', 'कुल कोलेस्ट्रॉल')
+        .replace('LDL Cholesterol', 'एलडीएल कोलेस्ट्रॉल');
+    }
+    if (text.includes('Elevated hs-CRP')) {
+      return text
+        .replace('Elevated hs-CRP', 'बढ़ा हुआ hs-CRP')
+        .replace('suggesting possible inflammation or increased cardiovascular risk', 'जो संभावित सूजन या बढ़े हुए हृदय जोखिम का संकेत देता है');
+    }
+    if (text.includes('Vitamin D deficiency')) {
+      return text.replace('Vitamin D deficiency', 'विटामिन डी की कमी');
+    }
+    if (text.includes('Vitamin B12 deficiency')) {
+      return text.replace('Vitamin B12 deficiency', 'विटामिन बी12 की कमी');
+    }
+    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
+      return text.replace('Blood glucose levels are within the normal range', 'रक्त शर्करा (ग्लूकोज) का स्तर सामान्य सीमा के भीतर है');
+    }
+  } else if (lang === 'ta') {
+    if (text.includes('Elevated Cholesterol')) {
+      return text
+        .replace('Elevated Cholesterol', 'அதிகரித்த கொலஸ்ட்ரால்')
+        .replace('Total Cholesterol', 'மொத்த கொலஸ்ட்ரால்')
+        .replace('LDL Cholesterol', 'எல்டிஎல் கொலஸ்ட்ரால்');
+    }
+    if (text.includes('Elevated hs-CRP')) {
+      return text
+        .replace('Elevated hs-CRP', 'அதிகரித்த hs-CRP')
+        .replace('suggesting possible inflammation or increased cardiovascular risk', 'சாத்தியமான வீக்கம் அல்லது இதய நோய் அபாயத்தைக் குறிக்கிறது');
+    }
+    if (text.includes('Vitamin D deficiency')) {
+      return text.replace('Vitamin D deficiency', 'வைட்டமின் டி குறைபாடு');
+    }
+    if (text.includes('Vitamin B12 deficiency')) {
+      return text.replace('Vitamin B12 deficiency', 'வைட்டமின் பி12 குறைபாடு');
+    }
+    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
+      return text.replace('Blood glucose levels are within the normal range', 'இரத்த குளுக்கோஸ் அளவுகள் இயல்பான வரம்பிற்குள் உள்ளன');
+    }
+  } else if (lang === 'es') {
+    if (text.includes('Elevated Cholesterol')) {
+      return text
+        .replace('Elevated Cholesterol', 'Colesterol elevado')
+        .replace('Total Cholesterol', 'Colesterol total')
+        .replace('LDL Cholesterol', 'Colesterol LDL');
+    }
+    if (text.includes('Elevated hs-CRP')) {
+      return text
+        .replace('Elevated hs-CRP', 'hs-CRP elevado')
+        .replace('suggesting possible inflammation or increased cardiovascular risk', 'lo que sugiere posible inflamación o aumento del riesgo cardiovascular');
+    }
+    if (text.includes('Vitamin D deficiency')) {
+      return text.replace('Vitamin D deficiency', 'Deficiencia de vitamina D');
+    }
+    if (text.includes('Vitamin B12 deficiency')) {
+      return text.replace('Vitamin B12 deficiency', 'Deficiencia de vitamina B12');
+    }
+    if (text.includes('Blood glucose levels are within the normal range') || text.includes('Blood glucose')) {
+      return text.replace('Blood glucose levels are within the normal range', 'Los niveles de glucosa en sangre están dentro del rango normal');
+    }
+  }
+
+  // Token-by-token replacement
+  let translated = text;
+  for (const [enTerm, targetTerm] of Object.entries(dict)) {
+    if (translated.includes(enTerm)) {
+      translated = translated.split(enTerm).join(targetTerm);
+    }
+  }
+  return translated;
+};
+
+const callClientGeminiTranslation = async (
+  summary: any,
+  targetLanguage: string,
+  apiKey: string
+): Promise<any | null> => {
+  const languageNames: Record<string, string> = {
+    te: 'Telugu (తెలుగు)',
+    hi: 'Hindi (हिन्दी)',
+    ta: 'Tamil (தமிழ்)',
+    es: 'Spanish (Español)',
+    fr: 'French (Français)'
+  };
+  const targetName = languageNames[targetLanguage] || targetLanguage;
+
+  const prompt = `You are an expert multilingual medical translator.
+Translate the following medical summary JSON object into ${targetName}.
+
+MANDATORY RULES:
+1. Translate EVERY single sentence in "key_highlights" into fluent, natural ${targetName}. Do NOT keep them in English.
+2. Translate "overview", "important_findings", "diagnoses", "plain_language_explanations", "questions_for_doctor", and "disclaimer" into natural ${targetName}.
+3. For "abnormal_results", translate the "explanation" into ${targetName}.
+4. PRESERVE all numerical values (e.g. 207, 148.2, 7.5, 18.41, 155.7) and measurement units (mg/dL, pg/mL, ng/mL, mg/L, mmHg).
+5. Output ONLY a clean valid JSON object with identical keys and translated string contents.
+
+Input JSON:
+${JSON.stringify(summary, null, 2)}`;
+
+  const payload = {
+    contents: [
+      {
+        parts: [{ text: prompt }]
+      }
+    ],
+    generationConfig: {
+      response_mime_type: 'application/json'
+    }
+  };
+
+  const models = [
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-flash-lite',
+    'gemini-3.5-flash-lite',
+    'gemini-flash-latest'
+  ];
+
+  for (const model of models) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        }
+      );
+      clearTimeout(timeoutId);
+
+      if (resp.ok) {
+        const json = await resp.json();
+        const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          const parsed = JSON.parse(text);
+          if (parsed.key_highlights && parsed.overview) {
+            return parsed;
+          }
+        }
+      }
+    } catch {
+      // Continue to next candidate model
+    }
+  }
+
+  return null;
+};
+
 export const translateSummaryClientFallback = async (
   recordId: string,
-  targetLanguage: string
+  targetLanguage: string,
+  providedSummary?: any
 ): Promise<{ record_id: string; target_language: string; translated_summary: any }> => {
   const local = getStoredLocalRecords().find(r => r.id === recordId);
-  const baseSummary = local?.summaries?.[0]?.summary_json || {
+  const baseSummary = providedSummary || local?.summaries?.[0]?.summary_json || {
     overview: 'Clinical health record analyzed and verified cleanly.',
     key_highlights: ['All parameters within normal limits'],
     important_findings: ['Standard health check completed'],
@@ -920,39 +1271,89 @@ export const translateSummaryClientFallback = async (
     disclaimer: 'Personal Health Copilot provides health information and does not replace professional medical advice.'
   };
 
-  const translations: Record<string, any> = {
-    hi: {
-      overview: 'स्वास्थ्य रिपोर्ट का सफलतापूर्वक विश्लेषण किया गया। सभी परीक्षण मानक सीमाओं के भीतर हैं।',
-      plain_language_explanations: ['हीमोग्लोबिन: आपके शरीर में ऑक्सीजन पहुंचाने का काम करता है।', 'ग्लूकोज: शरीर की कोशिकाओं के लिए ऊर्जा का स्रोत।'],
-      disclaimer: 'यह सारांश केवल सूचनात्मक उद्देश्यों के लिए है। किसी भी चिकित्सा निर्णय के लिए अपने डॉक्टर से परामर्श लें।'
-    },
-    te: {
-      overview: 'ఆరోగ్య నివేదిక విజయవంతంగా విశ్లేషించబడింది. అన్ని పరీక్షా ఫలితాలు సాధారణ పరిధిలో ఉన్నాయి.',
-      plain_language_explanations: ['హీమోగ్లోబిన్: ఊపిరితిత్తుల నుండి శరీరానికి ఆక్సిజన్ సరఫరా చేస్తుంది.', 'గ్లూకోజ్: శరీర కణాలకు ప్రధాన శక్తి వనరు.'],
-      disclaimer: 'ఈ సారాంశం కేవలం సమాచారం కోసం మాత్రమే. దయచేసి మీ వైద్యుడిని సంప్రదించండి.'
-    },
-    ta: {
-      overview: 'மருத்துவ அறிக்கை வெற்றிகரமாக பகுப்பாய்வு செய்யப்பட்டது. அனைத்து முடிவுகளும் இயல்பான வரம்பிற்குள் உள்ளன.',
-      plain_language_explanations: ['ஹீமோகுளோபின்: உடலுக்கு ஆக்சிஜனை கொண்டு சேர்க்கிறது.', 'குளுக்கோஸ்: உடலின் ஆற்றல் ஆதாரம்.'],
-      disclaimer: 'இந்த சுருக்கம் தகவல் நோக்கங்களுக்காக மட்டுமே. உங்கள் மருத்துவரை அணுகவும்.'
-    },
-    es: {
-      overview: 'Informe médico analizado exitosamente. Todos los parámetros clínicos se encuentran dentro de los rangos normales esperados.',
-      plain_language_explanations: ['Hemoglobina: Transporta oxígeno por todo el cuerpo.', 'Glucosa: Fuente principal de energía para las células.'],
-      disclaimer: 'Este resumen es solo para fines informativos y no reemplaza el consejo médico profesional.'
+  if (targetLanguage === 'en') {
+    return {
+      record_id: recordId,
+      target_language: 'en',
+      translated_summary: baseSummary
+    };
+  }
+
+  // 1. Try Gemini API directly from client if key is configured
+  const geminiKey = import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('health_copilot_gemini_key');
+  if (geminiKey && geminiKey.length > 10) {
+    try {
+      const geminiTranslated = await callClientGeminiTranslation(baseSummary, targetLanguage, geminiKey);
+      if (geminiTranslated) {
+        return {
+          record_id: recordId,
+          target_language: targetLanguage,
+          translated_summary: geminiTranslated
+        };
+      }
+    } catch (e) {
+      console.warn('Client Gemini translation error, using deterministic medical dictionary translation:', e);
     }
+  }
+
+  // 2. Comprehensive deterministic medical dictionary translation
+  const overviewMap: Record<string, string> = {
+    te: 'ఈ నివేదిక మీ వైద్య రికార్డు మరియు ల్యాబరేటరీ ఫలితాల సమగ్ర సారాంశం. ముఖ్యమైన రక్త పరీక్షలు, కొలెస్ట్రాల్, విటమిన్ స్థాయిలు మరియు సాధారణ పరిమితులకు భిన్నంగా ఉన్న ఆరోగ్య ఫలితాలు క్రింద స్పష్టంగా వివరించబడ్డాయి.',
+    hi: 'यह दस्तावेज़ आपकी मेडिकल रिपोर्ट और प्रयोगशाला परिणामों का संपूर्ण अवलोकन है। प्रमुख रक्त परीक्षण, कोलेस्ट्रॉल, विटामिन का स्तर और महत्वपूर्ण स्वास्थ्य निष्कर्ष नीचे दिए गए हैं।',
+    ta: 'இந்த ஆவணம் உங்கள் மருத்துவ அறிக்கை மற்றும் ஆய்வக முடிவுகளின் விரிவான கண்ணோட்டம். முக்கியமான இரத்த பரிசோதனைகள், கொலஸ்ட்ரால், வைட்டமின் அளவுகள் கீழே தெளிவாகத் தொகுக்கப்பட்டுள்ளன.',
+    es: 'Este documento es un resumen completo de su informe médico y resultados de laboratorio. Se presentan análisis de sangre, colesterol, vitaminas y valores fuera de los límites de referencia.',
+    fr: 'Ce document est un aperçu complet de votre rapport médical et des résultats de laboratoire. Les bilans sanguins, taux de cholestérol et vitamines sont résumés ci-dessous.'
   };
 
-  const localized = translations[targetLanguage] || {};
+  const disclaimerMap: Record<string, string> = {
+    te: 'ఈ సారాంశం కేవలం వ్యక్తిగత అవగాహన కోసం మాత్రమే. దయచేసి ఏదైనా చికిత్స లేదా మందుల కోసం మీ వైద్యుడిని సంప్రదించండి.',
+    hi: 'यह सारांश केवल सूचनात्मक उद्देश्यों के लिए है। किसी भी चिकित्सीय निर्णय के लिए अपने डॉक्टर से परामर्श लें।',
+    ta: 'இந்த சுருக்கம் தகவல் நோக்கங்களுக்காக மட்டுமே. எந்தவொரு சிகிச்சைக்கும் உங்கள் மருத்துவரை அணுகவும்.',
+    es: 'Este resumen es solo para fines informativos y no reemplaza el consejo médico profesional.',
+    fr: 'Ce résumé est fourni à titre indicatif et ne remplace pas un avis médical professionnel.'
+  };
+
+  // Translate Key Highlights
+  const rawHighlights: string[] = baseSummary.key_highlights || [];
+  const translatedHighlights = rawHighlights.map(h => translateClinicalTextFallback(h, targetLanguage));
+
+  // Translate Important Findings
+  const rawFindings: string[] = baseSummary.important_findings || [];
+  const translatedFindings = rawFindings.map(f => translateClinicalTextFallback(f, targetLanguage));
+
+  // Translate Diagnoses
+  const rawDiagnoses: string[] = baseSummary.diagnoses || [];
+  const translatedDiagnoses = rawDiagnoses.map(d => translateClinicalTextFallback(d, targetLanguage));
+
+  // Translate Questions for Doctor
+  const rawQuestions: string[] = baseSummary.questions_for_doctor || [];
+  const translatedQuestions = rawQuestions.map(q => translateClinicalTextFallback(q, targetLanguage));
+
+  // Translate Explanations
+  const rawExplanations: string[] = baseSummary.plain_language_explanations || [];
+  const translatedExplanations = rawExplanations.map(e => translateClinicalTextFallback(e, targetLanguage));
+
+  // Translate Abnormal Results
+  const rawAbnormals: any[] = baseSummary.abnormal_results || [];
+  const translatedAbnormals = rawAbnormals.map(ab => ({
+    ...ab,
+    test_name: translateClinicalTextFallback(ab.test_name || '', targetLanguage),
+    explanation: translateClinicalTextFallback(ab.explanation || '', targetLanguage)
+  }));
 
   return {
     record_id: recordId,
     target_language: targetLanguage,
     translated_summary: {
       ...baseSummary,
-      overview: localized.overview || baseSummary.overview,
-      plain_language_explanations: localized.plain_language_explanations || baseSummary.plain_language_explanations,
-      disclaimer: localized.disclaimer || baseSummary.disclaimer
+      overview: overviewMap[targetLanguage] || translateClinicalTextFallback(baseSummary.overview, targetLanguage),
+      key_highlights: translatedHighlights,
+      important_findings: translatedFindings,
+      diagnoses: translatedDiagnoses,
+      questions_for_doctor: translatedQuestions,
+      abnormal_results: translatedAbnormals,
+      plain_language_explanations: translatedExplanations,
+      disclaimer: disclaimerMap[targetLanguage] || baseSummary.disclaimer
     }
   };
 };

@@ -39,7 +39,7 @@ export const RecordDetailPage: React.FC = () => {
           setLoading(false);
           // If user current language is not English, immediately translate document overview
           if (i18n.language && i18n.language !== 'en') {
-            handleTranslateForRecord(data.id, i18n.language);
+            handleTranslateForRecord(data.id, i18n.language, data.summaries?.[0]?.summary_json);
           }
         })
         .catch((err) => {
@@ -56,7 +56,7 @@ export const RecordDetailPage: React.FC = () => {
     }
   }, [i18n.language]);
 
-  const handleTranslateForRecord = async (recordId: string, langCode: string) => {
+  const handleTranslateForRecord = async (recordId: string, langCode: string, summaryJsonOverride?: any) => {
     setSelectedLanguage(langCode);
     if (langCode === 'en') {
       setTranslatedSummary(null);
@@ -64,7 +64,8 @@ export const RecordDetailPage: React.FC = () => {
     }
     setTranslating(true);
     try {
-      const res = await translateSummary(recordId, langCode);
+      const activeBase = summaryJsonOverride || record?.summaries?.[0]?.summary_json;
+      const res = await translateSummary(recordId, langCode, activeBase);
       if (res && res.translated_summary) {
         setTranslatedSummary(res.translated_summary);
       }
@@ -412,19 +413,32 @@ export const RecordDetailPage: React.FC = () => {
                   {t('recordDetail.keyPointsBadge', 'Key Points')}
                 </span>
               </div>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                {activeSummary.key_highlights.map((h: string, idx: number) => (
-                  <li key={idx} className="bg-white/90 p-3.5 rounded-xl border border-teal-100 flex items-start gap-2.5 text-sm text-slate-800 font-medium shadow-2xs">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span className="leading-snug">{h}</span>
-                  </li>
-                ))}
-              </ul>
+              {translating ? (
+                <div className="py-4 space-y-2.5 animate-pulse">
+                  <div className="h-12 bg-white/80 rounded-xl border border-teal-100 w-full flex items-center px-4 gap-3">
+                    <RefreshCw className="w-4 h-4 text-teal-600 animate-spin" />
+                    <span className="text-xs text-teal-800 font-semibold">{t('recordDetail.translatingStatus', 'Translating highlights...')}</span>
+                  </div>
+                  <div className="h-12 bg-white/80 rounded-xl border border-teal-100 w-full flex items-center px-4 gap-3">
+                    <RefreshCw className="w-4 h-4 text-teal-600 animate-spin" />
+                    <span className="text-xs text-teal-800 font-semibold">{t('recordDetail.translatingStatus', 'Translating highlights...')}</span>
+                  </div>
+                </div>
+              ) : (
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  {activeSummary.key_highlights.map((h: string, idx: number) => (
+                    <li key={idx} className="bg-white/90 p-3.5 rounded-xl border border-teal-100 flex items-start gap-2.5 text-sm text-slate-800 font-medium shadow-2xs">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span className="leading-snug">{h}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 
           {/* EXTRACTED CLINICAL DIAGNOSES */}
-          {((record.diagnoses && record.diagnoses.length > 0) || (activeSummary.diagnoses && activeSummary.diagnoses.length > 0)) && (
+          {((activeSummary.diagnoses && activeSummary.diagnoses.length > 0) || (record.diagnoses && record.diagnoses.length > 0)) && (
             <div className="bg-indigo-50/70 p-6 rounded-2xl border border-indigo-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -438,7 +452,7 @@ export const RecordDetailPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex flex-wrap gap-2.5 pt-1">
-                {(record.diagnoses && record.diagnoses.length > 0 ? record.diagnoses : (activeSummary.diagnoses || [])).map((diag: string, idx: number) => (
+                {(activeSummary.diagnoses && activeSummary.diagnoses.length > 0 ? activeSummary.diagnoses : (record.diagnoses || [])).map((diag: string, idx: number) => (
                   <div key={idx} className="bg-white px-4 py-2.5 rounded-xl border border-indigo-200 flex items-center gap-2.5 text-sm text-slate-800 font-bold shadow-2xs">
                     <Activity className="w-4 h-4 text-indigo-600 shrink-0" />
                     <span>{diag}</span>

@@ -344,12 +344,22 @@ export const uploadRecordFile = async (file: File, patientId?: string): Promise<
   }
 };
 
-export const translateSummary = async (recordId: string, targetLanguage: string) => {
+export const translateSummary = async (recordId: string, targetLanguage: string, currentSummary?: any) => {
   try {
-    return (await api.post(`/api/records/${recordId}/translate`, { target_language: targetLanguage })).data;
+    const res = await api.post(`/api/records/${recordId}/translate`, { target_language: targetLanguage });
+    if (res.data && res.data.translated_summary) {
+      // If backend returned English key highlights when user selected a non-English language, enrich with client fallback
+      const backendHighlights = res.data.translated_summary.key_highlights || [];
+      const hasEnglish = backendHighlights.some((h: string) => /elevated|deficiency|normal range/i.test(h));
+      if (targetLanguage !== 'en' && hasEnglish) {
+        return await translateSummaryClientFallback(recordId, targetLanguage, res.data.translated_summary);
+      }
+      return res.data;
+    }
   } catch (err) {
-    return await translateSummaryClientFallback(recordId, targetLanguage);
+    console.warn('Backend translation unavailable, running client medical translation fallback...', err);
   }
+  return await translateSummaryClientFallback(recordId, targetLanguage, currentSummary);
 };
 
 export const fetchTimeline = async (eventType?: string, search?: string): Promise<DocumentEvent[]> => {
