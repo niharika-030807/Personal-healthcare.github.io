@@ -15,10 +15,10 @@ from app.schemas import ExtractedMedicalData, LabResultCreate, MedicationCreate
 logger = logging.getLogger(__name__)
 
 GEMINI_CANDIDATE_MODELS = [
+    "gemini-2.5-flash",
     "gemini-flash-latest",
-    "gemini-3.8-flash",
+    "gemini-2.5-flash-lite",
     "gemini-3.1-flash-lite",
-    "gemini-3.5-flash",
     "gemini-3-flash-preview"
 ]
 
@@ -202,7 +202,7 @@ Known Text Content (if any):
     for model in GEMINI_CANDIDATE_MODELS:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         try:
-            resp = requests.post(url, json=payload, timeout=12)
+            resp = requests.post(url, json=payload, timeout=3.5)
             if resp.status_code == 200:
                 res_data = resp.json()
                 logger.info(f"Gemini medical extraction succeeded using model: {model}")

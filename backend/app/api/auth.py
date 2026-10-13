@@ -103,14 +103,19 @@ def login_user(payload: UserLogin, db: Session = Depends(get_db)):
             db.commit()
             db.refresh(user)
 
-        # Verify password if email-based account
-        if user.auth_provider != "google" and user.password_hash != "GOOGLE_OAUTH_ACCOUNT":
-            if not verify_password(payload.password, user.password_hash):
-                if not payload.full_name:
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Invalid email or password."
-                    )
+        # Disallow password login for Google OAuth accounts
+        if user.auth_provider == "google" or user.password_hash == "GOOGLE_OAUTH_ACCOUNT":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This account was registered using Google Sign-In. Please sign in with Google."
+            )
+
+        # Verify password for standard email accounts
+        if not verify_password(payload.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password."
+            )
 
         patients = db.query(Patient).filter(Patient.user_id == user.id).all()
         self_patient = next((p for p in patients if p.relationship_type == "Self"), None)
@@ -155,6 +160,8 @@ def google_auth(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
             google_sub = str(id_info.get("sub"))
             verified_email = id_info.get("email", "").lower().strip()
             verified_name = id_info.get("name") or verified_email.split("@")[0]
+        except HTTPException:
+            raise
         except Exception:
             # Fall back to payload metadata if token verification fails in local dev
             if payload.email:
@@ -162,7 +169,7 @@ def google_auth(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
                 verified_name = payload.name or verified_email.split("@")[0]
                 google_sub = f"google_local_{verified_email}"
             else:
-                raise HTTPException(status_code=400, detail="Google authentication verification failed.")
+                raise HTTPException(status_code=401, detail="Google authentication verification failed.")
     elif payload.email:
         verified_email = payload.email.lower().strip()
         verified_name = payload.name or verified_email.split("@")[0]
