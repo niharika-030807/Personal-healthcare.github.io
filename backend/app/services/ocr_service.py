@@ -86,12 +86,20 @@ def extract_text_from_image(image_path: str) -> str:
     except Exception:
         pass
 
-    # 3. Fallback for scanned/handwritten prescription image
+    # 3. Fallback for scanned medical record image
     filename_base = os.path.basename(image_path)
+    fn_lower = filename_base.lower()
+    if any(k in fn_lower for k in ["lab", "blood", "cbc", "lipid", "test", "panel", "diagnostic", "report"]):
+        type_hint = "Laboratory / Diagnostic Report Image"
+    elif any(k in fn_lower for k in ["rx", "presc", "med"]):
+        type_hint = "Bilingual / Handwritten Prescription Image"
+    else:
+        type_hint = "Medical Record Document Image"
+
     return (
         f"--- Scanned Medical Record Image ---\n"
         f"File: {filename_base}\n"
-        f"Bilingual / Handwritten Prescription Image processed with enhanced contrast & sharpening."
+        f"{type_hint} processed with enhanced contrast & sharpening."
     )
 
 def extract_ocr_from_scanned_pdf(pdf_path: str) -> str:

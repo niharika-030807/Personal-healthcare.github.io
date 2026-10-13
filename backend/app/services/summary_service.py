@@ -17,10 +17,8 @@ DISCLAIMER_TEXT = (
 )
 
 GEMINI_CANDIDATE_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-flash-latest",
-    "gemini-2.5-flash-lite",
     "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
     "gemini-3-flash-preview"
 ]
 
@@ -93,7 +91,7 @@ Language Target: {language}
     for model in GEMINI_CANDIDATE_MODELS:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         try:
-            resp = requests.post(url, json=payload, timeout=3.5)
+            resp = requests.post(url, json=payload, timeout=15)
             if resp.status_code == 200:
                 res_data = resp.json()
                 logger.info(f"Gemini summary generation succeeded using model: {model}")

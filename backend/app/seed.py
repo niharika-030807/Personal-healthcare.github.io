@@ -42,11 +42,17 @@ def seed_demo_data(db: Session) -> Patient:
             "demo_rec_002": ["Improving Anemia (Hemoglobin Response)", "Impaired Fasting Glucose (Monitoring)"],
             "demo_rec_003": ["Acute Respiratory Tract Infection", "Nutritional Iron Deficiency"],
             "demo_rec_004": ["Normal Chest Radiograph", "Clear Lung Fields"],
-            "demo_rec_005": ["Acute Bronchitis (Resolved)", "Post-Infectious Recovery"]
+            "demo_rec_005": ["Acute Bronchitis (Resolved)", "Post-Infectious Recovery"],
+            "demo_rec_006": ["Mild Anemia (Hemoglobin 11.2 g/dL, Hematocrit 34.5%)", "Elevated Fasting Blood Glucose (104 mg/dL)", "Hypercholesterolemia (Total Cholesterol 210 mg/dL, LDL 134 mg/dL)"]
         }
         for rec in demo_records:
             if not rec.diagnoses and rec.id in demo_diag_map:
                 rec.diagnoses = demo_diag_map[rec.id]
+        
+        has_rec6 = any(r.id == "demo_rec_006" for r in demo_records)
+        if not has_rec6:
+            _seed_niharika_lab_report(db, patient)
+            
         db.commit()
         return patient
 
@@ -393,5 +399,265 @@ def seed_demo_data(db: Session) -> Patient:
     )
     db.add(event5)
 
+    _seed_niharika_lab_report(db, patient)
+
     db.commit()
     return patient
+
+def _seed_niharika_lab_report(db: Session, patient: Patient):
+    existing = db.query(MedicalRecord).filter(MedicalRecord.id == "demo_rec_006").first()
+    if existing:
+        return existing
+
+    rec6 = MedicalRecord(
+        id="demo_rec_006",
+        patient_id=patient.id,
+        record_type="Laboratory report",
+        original_filename="HealthCare_Diagnostics_Complete_Health_Checkup.png",
+        storage_reference="./uploads/8f42913d-114c-4d23-bf79-20cbff1c5861_a7e5c196-f18f-42b9-aa98-0eb73ae4d9ae.png",
+        document_date="2026-10-08",
+        extracted_patient_name="Niharika",
+        patient_mismatch_warning=0,
+        patient_confirmation_status="Confirmed",
+        processing_status="Completed",
+        extraction_status="Completed",
+        verification_status="Extracted",
+        diagnoses=["Mild Anemia (Hemoglobin 11.2 g/dL, Hematocrit 34.5%)", "Elevated Fasting Blood Glucose (104 mg/dL)", "Hypercholesterolemia (Total Cholesterol 210 mg/dL, LDL 134 mg/dL)"],
+        is_demo=1
+    )
+    db.add(rec6)
+    db.commit()
+
+    niharika_labs = [
+        # CBC
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Hemoglobin (Hb)",
+            value="11.2",
+            unit="g/dL",
+            reference_min=12.0,
+            reference_max=15.0,
+            reference_text="12.0 - 15.0 g/dL",
+            result_status="Abnormal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Total Leukocyte Count (TLC)",
+            value="6.8",
+            unit="x 10^3/uL",
+            reference_min=4.0,
+            reference_max=11.0,
+            reference_text="4.0 - 11.0 x 10^3/uL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Red Blood Cell Count (RBC)",
+            value="4.02",
+            unit="x 10^6/uL",
+            reference_min=3.8,
+            reference_max=5.1,
+            reference_text="3.8 - 5.1 x 10^6/uL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Hematocrit (HCT)",
+            value="34.5",
+            unit="%",
+            reference_min=36.0,
+            reference_max=46.0,
+            reference_text="36.0 - 46.0 %",
+            result_status="Abnormal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Mean Corpuscular Volume (MCV)",
+            value="85.8",
+            unit="fL",
+            reference_min=80.0,
+            reference_max=100.0,
+            reference_text="80 - 100 fL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Platelet Count",
+            value="248",
+            unit="x 10^3/uL",
+            reference_min=150.0,
+            reference_max=450.0,
+            reference_text="150 - 450 x 10^3/uL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        # Blood Sugar
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Fasting Blood Glucose (FBS)",
+            value="104",
+            unit="mg/dL",
+            reference_min=70.0,
+            reference_max=99.0,
+            reference_text="70 - 99 mg/dL",
+            result_status="Abnormal",
+            verification_status="Extracted"
+        ),
+        # Lipid Profile
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Total Cholesterol",
+            value="210",
+            unit="mg/dL",
+            reference_min=125.0,
+            reference_max=200.0,
+            reference_text="< 200 mg/dL",
+            result_status="Abnormal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Triglycerides",
+            value="138",
+            unit="mg/dL",
+            reference_min=50.0,
+            reference_max=150.0,
+            reference_text="< 150 mg/dL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="HDL Cholesterol",
+            value="48",
+            unit="mg/dL",
+            reference_min=40.0,
+            reference_max=100.0,
+            reference_text="> 40 mg/dL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="LDL Cholesterol",
+            value="134",
+            unit="mg/dL",
+            reference_min=50.0,
+            reference_max=100.0,
+            reference_text="< 100 mg/dL",
+            result_status="Abnormal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="VLDL Cholesterol",
+            value="28",
+            unit="mg/dL",
+            reference_min=5.0,
+            reference_max=40.0,
+            reference_text="5 - 40 mg/dL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        # Kidney Function Test
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Serum Creatinine",
+            value="0.71",
+            unit="mg/dL",
+            reference_min=0.6,
+            reference_max=1.2,
+            reference_text="0.6 - 1.2 mg/dL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="Blood Urea Nitrogen (BUN)",
+            value="14",
+            unit="mg/dL",
+            reference_min=7.0,
+            reference_max=20.0,
+            reference_text="7 - 20 mg/dL",
+            result_status="Normal",
+            verification_status="Extracted"
+        ),
+        # Thyroid Function Test
+        LabResult(
+            medical_record_id=rec6.id,
+            test_name="TSH (Thyroid Stimulating Hormone)",
+            value="2.1",
+            unit="uIU/mL",
+            reference_min=0.4,
+            reference_max=4.0,
+            reference_text="0.4 - 4.0 uIU/mL",
+            result_status="Normal",
+            verification_status="Extracted"
+        )
+    ]
+    db.add_all(niharika_labs)
+
+    sum6 = HealthSummary(
+        medical_record_id=rec6.id,
+        language="en",
+        summary_json={
+            "overview": "Laboratory Report from HealthCare Diagnostics (Date: October 8, 2026, Dr. S. Priya, Pathologist) for Niharika. The comprehensive panel evaluated Complete Blood Count, Blood Glucose, Lipid Profile, Kidney Function, and Thyroid Function. Key takeaways: mild anemia and slightly elevated glucose and LDL cholesterol, with normal kidney and thyroid functions.",
+            "important_findings": [
+                "Hemoglobin (11.2 g/dL) and Hematocrit (34.5%) are slightly below reference limits, indicating mild anemia.",
+                "Fasting Blood Glucose (FBS) is mildly elevated at 104 mg/dL (Normal: 70 - 99 mg/dL).",
+                "Total Cholesterol (210 mg/dL) and LDL Cholesterol (134 mg/dL) are elevated above standard limits.",
+                "Kidney Function (Serum Creatinine 0.71 mg/dL, BUN 14 mg/dL) is healthy and normal.",
+                "Thyroid Function (TSH 2.1 uIU/mL) is within the optimal reference range."
+            ],
+            "abnormal_results": [
+                {
+                    "test_name": "Hemoglobin (Hb) & Hematocrit (HCT)",
+                    "value": "11.2 g/dL / 34.5%",
+                    "reference_range": "12.0 - 15.0 g/dL / 36.0 - 46.0 %",
+                    "explanation": "Hemoglobin and hematocrit measure your red blood cells' oxygen-carrying capacity. Mildly low levels suggest mild anemia, which can cause subtle tiredness or fatigue."
+                },
+                {
+                    "test_name": "Fasting Blood Glucose (FBS)",
+                    "value": "104 mg/dL",
+                    "reference_range": "70 - 99 mg/dL",
+                    "explanation": "Fasting glucose measures your body's resting sugar regulation. Being slightly above 99 mg/dL indicates impaired fasting glucose; dietary and lifestyle adjustments help restore it to normal."
+                },
+                {
+                    "test_name": "Total Cholesterol & LDL Cholesterol",
+                    "value": "210 mg/dL / 134 mg/dL",
+                    "reference_range": "< 200 mg/dL / < 100 mg/dL",
+                    "explanation": "LDL is the 'bad' cholesterol that can accumulate in blood vessels. Elevated LDL suggests eating more soluble fiber, reducing saturated fats, and regular physical activity."
+                }
+            ],
+            "plain_language_explanations": [
+                "Your red blood cell count is slightly lower than normal, which doctor comments note as mild anemia.",
+                "Your fasting blood sugar is slightly higher than 99 mg/dL.",
+                "Your bad cholesterol (LDL) is above 100 mg/dL, recommended for lifestyle follow-up."
+            ],
+            "uncertainties": [],
+            "questions_for_doctor": [
+                "Do you recommend dietary iron supplements or dietary changes for my 11.2 g/dL Hemoglobin?",
+                "What nutritional guidelines should I follow to lower my LDL cholesterol (134 mg/dL) and Fasting Glucose (104 mg/dL)?",
+                "When should I repeat this complete health checkup to check progress?"
+            ],
+            "disclaimer": "Personal Health Copilot helps organize medical records and explain health information. It does not diagnose diseases, replace professional medical advice, or prescribe treatment. AI-generated explanations and extracted information may contain errors. Verify important findings with a qualified healthcare professional."
+        },
+        model_identifier="gemini-3.1-flash-lite"
+    )
+    db.add(sum6)
+
+    event6 = DocumentEvent(
+        patient_id=patient.id,
+        medical_record_id=rec6.id,
+        event_date="2026-10-08",
+        event_type="Laboratory report",
+        description="HealthCare Diagnostics Complete Health Checkup - 15 Clinical Parameters (CBC, Glucose, Lipids, KFT, TFT)"
+    )
+    db.add(event6)
+    db.commit()
+    return rec6

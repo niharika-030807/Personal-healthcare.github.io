@@ -77,10 +77,8 @@ def translate_summary_json(summary: SummaryJSON, target_language: str) -> Dict[s
         return _translate_via_fallback(summary, target_language)
 
 GEMINI_CANDIDATE_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-flash-latest",
-    "gemini-2.5-flash-lite",
     "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
     "gemini-3-flash-preview"
 ]
 
@@ -119,7 +117,7 @@ JSON to translate:
     for model in GEMINI_CANDIDATE_MODELS:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         try:
-            response = requests.post(url, json=payload, timeout=3.5)
+            response = requests.post(url, json=payload, timeout=15)
             if response.status_code == 200:
                 res_data = response.json()
                 break
