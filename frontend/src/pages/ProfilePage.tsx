@@ -35,7 +35,16 @@ export const ProfilePage: React.FC = () => {
       });
   }, [activePatient]);
 
-  const effectiveDisplayName = activePatient?.display_name || patient?.display_name || user?.full_name || 'Patient';
+  const savedProfile = (() => {
+    try {
+      const sp = localStorage.getItem('health_copilot_personal_profile');
+      return sp ? JSON.parse(sp) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const effectiveDisplayName = savedProfile?.name || activePatient?.display_name || patient?.display_name || user?.full_name || 'Patient';
 
   // 1. Unified Diagnoses & Conditions (deduplicated across all records)
   const allDiagnosesMap = new Map<string, { diagnosis: string; date?: string; recordId: string; recordType: string }>();
@@ -141,11 +150,19 @@ export const ProfilePage: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-2 flex flex-wrap items-center gap-3">
-                <span>DOB: <strong>{activePatient?.date_of_birth || patient?.date_of_birth || user?.date_of_birth || '1988-04-12'}</strong></span>
+                <span>Age: <strong>{savedProfile?.age ? `${savedProfile.age} yrs` : '34 yrs'}</strong></span>
                 <span>•</span>
-                <span>Language: <strong>{(activePatient?.preferred_language || patient?.preferred_language || user?.preferred_language || 'EN').toUpperCase()}</strong></span>
+                <span>Blood Group: <strong className="text-rose-300 font-extrabold">{savedProfile?.blood_group || 'O+'}</strong></span>
                 <span>•</span>
-                <span>Account: <strong>{user?.email || 'Active User'}</strong></span>
+                <span>Gender: <strong>{savedProfile?.gender || 'Female'}</strong></span>
+                <span>•</span>
+                <span>Emergency Contact: <strong className="text-emerald-300">{savedProfile?.emergency_contact || '+1 (555) 912-3456'}</strong></span>
+                {savedProfile?.emergency_contact_name && (
+                  <>
+                    <span>•</span>
+                    <span>Relation: <strong>{savedProfile.emergency_contact_name}</strong></span>
+                  </>
+                )}
               </p>
             </div>
           </div>

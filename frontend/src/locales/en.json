@@ -128,11 +128,8 @@
     "livePreview": "Live FHIR R4 Bundle Preview"
   },
   "settings": {
-    "title": "Application Settings & Configuration",
-    "subtitle": "Manage system state, inspect API integration, and reset synthetic demonstration data.",
-    "credentialsTitle": "Backend AI Credentials Status",
-    "reseedTitle": "Hackathon Demo Dataset Management",
-    "reseedBtn": "Re-seed Synthetic Demo Records"
+    "title": "Settings & Preferences",
+    "subtitle": "Manage your personal profile demographics, emergency contact details, and application appearance."
   },
   "recordDetail": {
     "documentOverview": "Document Overview",
