@@ -18,8 +18,10 @@ DISCLAIMER_TEXT = (
 
 GEMINI_CANDIDATE_MODELS = [
     "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
     "gemini-3.5-flash-lite",
-    "gemini-3-flash-preview"
+    "gemini-flash-latest",
+    "gemini-2.5-flash"
 ]
 
 def generate_health_summary(extracted: ExtractedMedicalData, language: str = "en") -> SummaryJSON:
@@ -88,21 +90,32 @@ Language Target: {language}
     res_data = None
     last_err = None
 
+    import time
     for model in GEMINI_CANDIDATE_MODELS:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-        try:
-            resp = requests.post(url, json=payload, timeout=15)
-            if resp.status_code == 200:
-                res_data = resp.json()
-                logger.info(f"Gemini summary generation succeeded using model: {model}")
-                break
-            else:
-                last_err = f"Model {model} returned HTTP {resp.status_code}: {resp.text[:200]}"
+        for attempt in range(2):
+            try:
+                resp = requests.post(url, json=payload, timeout=45)
+                if resp.status_code == 200:
+                    res_data = resp.json()
+                    logger.info(f"Gemini summary generation succeeded using model: {model}")
+                    break
+                elif resp.status_code == 503 and attempt == 0:
+                    time.sleep(1.5)
+                    continue
+                else:
+                    last_err = f"Model {model} returned HTTP {resp.status_code}: {resp.text[:200]}"
+                    logger.warning(last_err)
+                    break
+            except Exception as e:
+                last_err = f"Model {model} failed with exception: {e}"
                 logger.warning(last_err)
-        except Exception as e:
-            last_err = f"Model {model} failed with exception: {e}"
-            logger.warning(last_err)
-            continue
+                if attempt == 0:
+                    time.sleep(1.0)
+                    continue
+                break
+        if res_data:
+            break
 
     if not res_data:
         raise RuntimeError(f"Gemini API summary request failed across candidate models: {last_err}")
