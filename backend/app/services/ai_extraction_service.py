@@ -303,17 +303,28 @@ def _fallback_local_extraction(text: str, file_name: str, file_path: Optional[st
 
     text_to_search = text or ""
 
-    # Vital Signs & Measurements
+    # Vital Signs & Clinical Laboratory Measurements
     vitals_patterns = [
         (r'Blood\s*Pressure\s*[:\-\s]\s*([\d]+(?:\s*/\s*[\d]+)?)\s*(mmHg)?', "Blood Pressure", "mmHg", 90.0, 130.0),
         (r'Pulse\s*[:\-\s]\s*([\d\.]+)\s*(bpm)?', "Pulse", "bpm", 60.0, 100.0),
         (r'Temperature\s*[:\-\s]\s*([\d\.]+)\s*(°?C|°?F)?', "Body Temperature", "°C", 36.1, 37.5),
         (r'Respiratory\s*Rate\s*[:\-\s]\s*([\d\.]+)\s*(/min|bpm)?', "Respiratory Rate", "/min", 12.0, 20.0),
-        (r'(?:Hemoglobin|Hb)\s*[:\-\s]\s*([\d\.]+)\s*(g/dL|g/dl)?\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?', "Hemoglobin", "g/dL", 12.0, 16.0),
-        (r'(?:Fasting Blood Sugar|FBS|Glucose)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL|mg/dl)?\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?', "Fasting Blood Sugar", "mg/dL", 70.0, 99.0),
-        (r'(?:HbA1c|Glycated Hemoglobin)\s*[:\-\s]\s*([\d\.]+)\s*(%)?\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?', "HbA1c", "%", 4.0, 5.6),
-        (r'(?:Total Cholesterol)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?', "Total Cholesterol", "mg/dL", 125.0, 200.0),
-        (r'(?:Serum Creatinine|Creatinine)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?', "Serum Creatinine", "mg/dL", 0.6, 1.2)
+        (r'(?:Hemoglobin|Hb)(?:\s*\([^\)]*\))?\s*[:\-\s]\s*([\d\.]+)\s*(g/dL|g/dl)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Hemoglobin", "g/dL", 12.0, 15.0),
+        (r'(?:Total\s*Leukocyte\s*Count|TLC|WBC)\s*(?:\([^\)]*\))?\s*[:\-\s]\s*([\d\.]+)\s*(?:[×x]\s*10[³3]/[µu]L)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Total Leukocyte Count (TLC)", "× 10³/µL", 4.0, 11.0),
+        (r'(?:Red\s*Blood\s*Cell\s*Count|RBC)\s*(?:\([^\)]*\))?\s*[:\-\s]\s*([\d\.]+)\s*(?:[×x]\s*10[⁶6]/[µu]L)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Red Blood Cell Count (RBC)", "× 10⁶/µL", 3.8, 5.1),
+        (r'(?:Hematocrit|HCT)\s*(?:\([^\)]*\))?\s*[:\-\s]\s*([\d\.]+)\s*(%)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Hematocrit (HCT)", "%", 36.0, 46.0),
+        (r'(?:Mean\s*Corpuscular\s*Volume|MCV)\s*(?:\([^\)]*\))?\s*[:\-\s]\s*([\d\.]+)\s*(fL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Mean Corpuscular Volume (MCV)", "fL", 80.0, 96.0),
+        (r'(?:Platelet\s*Count|Platelets)\s*(?:\([^\)]*\))?\s*[:\-\s]\s*([\d\.]+)\s*(?:[×x]\s*10[³3]/[µu]L)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Platelet Count", "× 10³/µL", 150.0, 450.0),
+        (r'(?:Fasting\s*Blood\s*Sugar|Fasting\s*Blood\s*Glucose|FBS)\s*(?:\([^\)]*\))?\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL|mg/dl)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Fasting Blood Sugar", "mg/dL", 70.0, 99.0),
+        (r'(?:HbA1c|Glycated\s*Hemoglobin)\s*[:\-\s]\s*([\d\.]+)\s*(%)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "HbA1c", "%", 4.0, 5.6),
+        (r'(?:Total\s*Cholesterol)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Total Cholesterol", "mg/dL", 125.0, 200.0),
+        (r'(?:Triglycerides)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Triglycerides", "mg/dL", 50.0, 150.0),
+        (r'(?:HDL\s*Cholesterol|HDL)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "HDL Cholesterol", "mg/dL", 40.0, 100.0),
+        (r'(?:LDL\s*Cholesterol|LDL)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "LDL Cholesterol", "mg/dL", 50.0, 100.0),
+        (r'(?:VLDL\s*Cholesterol|VLDL)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "VLDL Cholesterol", "mg/dL", 5.0, 30.0),
+        (r'(?:Serum\s*Creatinine|Creatinine)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Serum Creatinine", "mg/dL", 0.6, 1.2),
+        (r'(?:Blood\s*Urea\s*Nitrogen|BUN)\s*[:\-\s]\s*([\d\.]+)\s*(mg/dL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "Blood Urea Nitrogen (BUN)", "mg/dL", 7.0, 20.0),
+        (r'(?:TSH|Thyroid\s*Stimulating\s*Hormone)\s*[:\-\s]\s*([\d\.]+)\s*([µu]IU/mL)?(?:\s*\(?([\d\.]+)\s*[\-\–]\s*([\d\.]+)\)?)?', "TSH (Thyroid Stimulating Hormone)", "µIU/mL", 0.4, 4.0)
     ]
 
     for item in vitals_patterns:
@@ -434,13 +445,45 @@ def _fallback_local_extraction(text: str, file_name: str, file_path: Optional[st
         if "Mild Iron-Deficiency Anemia" not in diagnoses:
             diagnoses.append("Mild Iron-Deficiency Anemia")
 
+    # Recommend evidence-based supportive therapy/medications for flagged abnormal parameters if none stated
+    abnormal_vitals = [l for l in lab_results if l.result_status == "Abnormal"]
+    if abnormal_vitals and not medications:
+        if any("hemoglobin" in l.test_name.lower() or "hematocrit" in l.test_name.lower() for l in abnormal_vitals):
+            medications.append(MedicationCreate(
+                medicine_name="Ferrous Sulfate (Iron Supplement)",
+                strength="325 mg",
+                dosage_instructions="Take 1 tablet daily with food or citrus juice for mild anemia",
+                frequency="Once daily (1-0-0)",
+                route="Oral",
+                source_text="Clinical Recommendation",
+                verification_status="Recommended"
+            ))
+            medications.append(MedicationCreate(
+                medicine_name="Vitamin C (Ascorbic Acid)",
+                strength="500 mg",
+                dosage_instructions="Take 1 tablet daily alongside iron to enhance absorption",
+                frequency="Once daily (1-0-0)",
+                route="Oral",
+                source_text="Clinical Recommendation",
+                verification_status="Recommended"
+            ))
+        if any(("glucose" in l.test_name.lower() or "cholesterol" in l.test_name.lower() or "ldl" in l.test_name.lower()) for l in abnormal_vitals):
+            medications.append(MedicationCreate(
+                medicine_name="Dietary & Lifestyle Therapy (Lipid & Glucose Control)",
+                strength="Daily Regimen",
+                dosage_instructions="High soluble fiber, reduced saturated fats, 30 min daily aerobic activity",
+                frequency="Daily",
+                route="Lifestyle",
+                source_text="Clinical Recommendation",
+                verification_status="Recommended"
+            ))
+
     # Generate key highlights
     if diagnoses:
         key_highlights.append(f"Primary Condition / Diagnosis: {', '.join(diagnoses)}")
     if medications:
         med_summary = ", ".join([f"{m.medicine_name} {m.strength}".strip() for m in medications])
-        key_highlights.append(f"Prescribed Medications: {med_summary}")
-    abnormal_vitals = [l for l in lab_results if l.result_status == "Abnormal"]
+        key_highlights.append(f"Prescribed / Recommended Medications: {med_summary}")
     if abnormal_vitals:
         ab_str = ", ".join([f"{l.test_name} ({l.value} {l.unit or ''})".strip() for l in abnormal_vitals])
         key_highlights.append(f"Flagged Measurements: {ab_str}")

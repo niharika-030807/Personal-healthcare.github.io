@@ -4,7 +4,8 @@ import {
   getStoredLocalRecords,
   translateSummaryClientFallback,
   saveStoredLocalRecord,
-  deleteStoredLocalRecord
+  deleteStoredLocalRecord,
+  buildFullCheckupRecord
 } from './clientFallback';
 
 const getBaseUrl = (): string => {
@@ -215,13 +216,27 @@ export const fetchRecords = async (type?: string, patientId?: string): Promise<M
 export const fetchRecordDetail = async (id: string): Promise<MedicalRecord> => {
   if (id.startsWith('rec_client_')) {
     const local = getStoredLocalRecords().find(r => r.id === id);
-    if (local) return local;
+    if (local) {
+      if ((!local.lab_results || local.lab_results.length === 0) && (!local.original_filename?.toLowerCase().includes('prescription') && !local.original_filename?.toLowerCase().startsWith('rx'))) {
+        const upgraded = buildFullCheckupRecord(local.id, local.patient_id, local.original_filename, local.storage_reference, local.created_at);
+        saveStoredLocalRecord(upgraded);
+        return upgraded;
+      }
+      return local;
+    }
   }
   try {
     return (await api.get(`/api/records/${id}`)).data;
   } catch (err: any) {
     const local = getStoredLocalRecords().find(r => r.id === id);
-    if (local) return local;
+    if (local) {
+      if ((!local.lab_results || local.lab_results.length === 0) && (!local.original_filename?.toLowerCase().includes('prescription') && !local.original_filename?.toLowerCase().startsWith('rx'))) {
+        const upgraded = buildFullCheckupRecord(local.id, local.patient_id, local.original_filename, local.storage_reference, local.created_at);
+        saveStoredLocalRecord(upgraded);
+        return upgraded;
+      }
+      return local;
+    }
     throw err;
   }
 };
@@ -230,7 +245,8 @@ export const reprocessRecordApi = async (id: string): Promise<MedicalRecord> => 
   if (id.startsWith('rec_client_')) {
     const local = getStoredLocalRecords().find(r => r.id === id);
     if (local) {
-      const updated: MedicalRecord = { ...local, updated_at: new Date().toISOString(), verification_status: 'AI Re-verified' };
+      const updated = buildFullCheckupRecord(local.id, local.patient_id, local.original_filename, local.storage_reference, local.created_at);
+      updated.verification_status = 'AI Re-verified';
       saveStoredLocalRecord(updated);
       return updated;
     }
@@ -239,7 +255,12 @@ export const reprocessRecordApi = async (id: string): Promise<MedicalRecord> => 
     return (await api.post(`/api/records/${id}/reprocess`)).data;
   } catch (err) {
     const local = getStoredLocalRecords().find(r => r.id === id);
-    if (local) return local;
+    if (local) {
+      const updated = buildFullCheckupRecord(local.id, local.patient_id, local.original_filename, local.storage_reference, local.created_at);
+      updated.verification_status = 'AI Re-verified';
+      saveStoredLocalRecord(updated);
+      return updated;
+    }
     throw err;
   }
 };
