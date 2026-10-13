@@ -193,6 +193,9 @@ export const fetchUserPatientsApi = async (): Promise<Patient[]> =>
 export const createPatientProfileApi = async (payload: { display_name: string; relationship_type?: string }): Promise<Patient> =>
   (await api.post('/api/auth/patients', payload)).data;
 
+export const updateUserProfileApi = async (payload: { name: string; date_of_birth?: string }): Promise<{ user: User; patients: Patient[] }> =>
+  (await api.put('/api/auth/profile', payload)).data;
+
 export const fetchHealth = async () => (await api.get('/health')).data;
 export const fetchLanguages = async (): Promise<LanguageMeta[]> => (await api.get('/api/languages')).data;
 export const fetchPatientMe = async (): Promise<Patient> => (await api.get('/api/patients/me')).data;

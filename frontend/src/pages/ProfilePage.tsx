@@ -10,7 +10,7 @@ import type { Patient, MedicalRecord, DocumentEvent } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export const ProfilePage: React.FC = () => {
-  const { user, activePatient } = useAuth();
+  const { user, activePatient, personalProfile } = useAuth();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [events, setEvents] = useState<DocumentEvent[]>([]);
@@ -35,16 +35,7 @@ export const ProfilePage: React.FC = () => {
       });
   }, [activePatient]);
 
-  const savedProfile = (() => {
-    try {
-      const sp = localStorage.getItem('health_copilot_personal_profile');
-      return sp ? JSON.parse(sp) : null;
-    } catch {
-      return null;
-    }
-  })();
-
-  const effectiveDisplayName = savedProfile?.name || activePatient?.display_name || patient?.display_name || user?.full_name || 'Patient';
+  const effectiveDisplayName = personalProfile?.name || activePatient?.display_name || patient?.display_name || user?.full_name || 'Patient';
 
   // 1. Unified Diagnoses & Conditions (deduplicated across all records)
   const allDiagnosesMap = new Map<string, { diagnosis: string; date?: string; recordId: string; recordType: string }>();
@@ -150,17 +141,17 @@ export const ProfilePage: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-2 flex flex-wrap items-center gap-3">
-                <span>Age: <strong>{savedProfile?.age ? `${savedProfile.age} yrs` : '34 yrs'}</strong></span>
+                <span>Age: <strong>{personalProfile?.age ? `${personalProfile.age} yrs` : '34 yrs'}</strong></span>
                 <span>•</span>
-                <span>Blood Group: <strong className="text-rose-300 font-extrabold">{savedProfile?.blood_group || 'O+'}</strong></span>
+                <span>Blood Group: <strong className="text-rose-300 font-extrabold">{personalProfile?.blood_group || 'O+'}</strong></span>
                 <span>•</span>
-                <span>Gender: <strong>{savedProfile?.gender || 'Female'}</strong></span>
+                <span>Gender: <strong>{personalProfile?.gender || 'Female'}</strong></span>
                 <span>•</span>
-                <span>Emergency Contact: <strong className="text-emerald-300">{savedProfile?.emergency_contact || '+1 (555) 912-3456'}</strong></span>
-                {savedProfile?.emergency_contact_name && (
+                <span>Emergency Contact: <strong className="text-emerald-300">{personalProfile?.emergency_contact || '+1 (555) 912-3456'}</strong></span>
+                {personalProfile?.emergency_contact_name && (
                   <>
                     <span>•</span>
-                    <span>Relation: <strong>{savedProfile.emergency_contact_name}</strong></span>
+                    <span>Relation: <strong>{personalProfile.emergency_contact_name}</strong></span>
                   </>
                 )}
               </p>

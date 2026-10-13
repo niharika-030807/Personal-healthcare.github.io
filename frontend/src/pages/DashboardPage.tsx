@@ -12,8 +12,8 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 
 export const DashboardPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user, activePatient } = useAuth();
-  const displayName = activePatient?.display_name || user?.full_name || 'User';
+  const { user, activePatient, personalProfile } = useAuth();
+  const displayName = personalProfile?.name || activePatient?.display_name || user?.full_name || 'User';
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [trendData, setTrendData] = useState<any[]>([]);
 
@@ -45,9 +45,21 @@ export const DashboardPage: React.FC = () => {
       
       <div className="bg-gradient-to-r from-teal-900 to-slate-900 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold mb-3 border border-teal-500/30">
-            Patient Portal • {t('demoBadge')}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold border border-teal-500/30">
+              Patient Portal • {t('demoBadge')}
+            </span>
+            {personalProfile?.blood_group && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30">
+                Blood Group: {personalProfile.blood_group}
+              </span>
+            )}
+            {personalProfile?.age && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-slate-300 text-xs font-semibold">
+                Age: {personalProfile.age} yrs
+              </span>
+            )}
+          </div>
           <h1 className="text-3xl font-extrabold tracking-tight">Welcome back, {displayName}</h1>
           <p className="text-slate-300 text-sm mt-1 max-w-2xl">
             {t('dashboard.subtitle')}

@@ -15,7 +15,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, personalProfile } = useAuth();
 
   const navItems = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: Activity },
@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {user ? (
             <div className="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
               <div className="min-w-0 pr-2">
-                <p className="text-xs font-bold text-slate-100 truncate">{user.full_name}</p>
+                <p className="text-xs font-bold text-slate-100 truncate">{personalProfile?.name || user.full_name}</p>
                 <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
               </div>
               <button

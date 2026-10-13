@@ -271,3 +271,31 @@ def create_patient_profile(
     db.commit()
     db.refresh(patient)
     return patient
+
+@router.put("/profile")
+def update_user_profile(
+    payload: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user full name and demographics."""
+    name = payload.get("name") or payload.get("full_name")
+    if name and str(name).strip():
+        current_user.full_name = str(name).strip()
+        self_pt = db.query(Patient).filter(Patient.user_id == current_user.id, Patient.relationship_type == "Self").first()
+        if self_pt:
+            self_pt.display_name = str(name).strip()
+
+    dob = payload.get("date_of_birth") or payload.get("dob")
+    if dob:
+        current_user.date_of_birth = str(dob).strip()
+
+    db.commit()
+    db.refresh(current_user)
+
+    patients = db.query(Patient).filter(Patient.user_id == current_user.id).all()
+    return {
+        "user": UserSchema.model_validate(current_user),
+        "patients": [PatientSchema.model_validate(p) for p in patients]
+    }
+

@@ -12,7 +12,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentLanguage, onSelectLanguage, onOpenSidebar }) => {
-  const { user, patients, activePatient, setActivePatient, createPatient, logout } = useAuth();
+  const { user, patients, activePatient, setActivePatient, createPatient, logout, personalProfile } = useAuth();
+  const currentDisplayName = personalProfile?.name || activePatient?.display_name || user?.full_name || 'Patient';
   const navigate = useNavigate();
   const [showPatientMenu, setShowPatientMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -68,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ currentLanguage, onSelectLanguag
                 <Users className="w-4 h-4 text-teal-600" />
                 <span className="hidden sm:inline text-slate-500">Patient:</span>
                 <span className="font-bold text-teal-700 max-w-[140px] truncate">
-                  {activePatient?.relationship_type === 'Self' ? user.full_name : (activePatient?.display_name || user.full_name)}
+                  {activePatient?.relationship_type === 'Self' ? currentDisplayName : (activePatient?.display_name || currentDisplayName)}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-teal-600" />
               </button>
@@ -122,16 +123,16 @@ export const Header: React.FC<HeaderProps> = ({ currentLanguage, onSelectLanguag
                 className="flex items-center gap-2 py-1.5 px-2.5 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-semibold transition"
               >
                 <div className="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs">
-                  {user.full_name.charAt(0).toUpperCase()}
+                  {currentDisplayName.charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden md:inline max-w-[100px] truncate">{user.full_name}</span>
+                <span className="hidden md:inline max-w-[100px] truncate">{currentDisplayName}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
 
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-900 truncate">{user.full_name}</p>
+                    <p className="text-xs font-bold text-slate-900 truncate">{currentDisplayName}</p>
                     <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                   </div>
                   <button

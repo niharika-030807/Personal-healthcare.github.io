@@ -20,73 +20,31 @@ const STORAGE_KEY = 'health_copilot_personal_profile';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user, activePatient, setActivePatient } = useAuth();
+  const { user, activePatient, personalProfile, updatePersonalProfile } = useAuth();
   const { theme, actualTheme, setTheme } = useTheme();
 
-  // Personal Profile Form States
-  const [profile, setProfile] = useState<PersonalProfileData>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn('Failed to parse saved personal profile:', e);
-    }
-    return {
-      name: activePatient?.display_name || user?.full_name || 'Eleanor Vance',
-      age: '34',
-      blood_group: 'O+',
-      gender: 'Female',
-      emergency_contact: '+1 (555) 912-3456',
-      emergency_contact_name: 'John Vance (Spouse)',
-    };
-  });
-
+  // Personal Profile Form States initialized from AuthContext
+  const [profile, setProfile] = useState<PersonalProfileData>(personalProfile);
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Sync if active user changes and no custom profile was saved
+  // Sync if personalProfile changes in AuthContext
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved && (activePatient || user)) {
-      setProfile(prev => ({
-        ...prev,
-        name: activePatient?.display_name || user?.full_name || prev.name,
-      }));
+    if (personalProfile) {
+      setProfile(personalProfile);
     }
-  }, [activePatient, user]);
+  }, [personalProfile]);
 
   const handleInputChange = (field: keyof PersonalProfileData, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-
-      // Propagate name change to active patient in localStorage and UI
-      if (activePatient) {
-        const updatedPatient = { ...activePatient, display_name: profile.name };
-        setActivePatient(updatedPatient);
-
-        try {
-          const cachedPatientsStr = localStorage.getItem('health_copilot_patients');
-          if (cachedPatientsStr) {
-            const cachedPatients = JSON.parse(cachedPatientsStr);
-            const updatedList = cachedPatients.map((p: any) => 
-              p.id === activePatient.id ? { ...p, display_name: profile.name } : p
-            );
-            localStorage.setItem('health_copilot_patients', JSON.stringify(updatedList));
-          }
-        } catch (err) {
-          console.warn('Could not update cached patients:', err);
-        }
-      }
-
+      await updatePersonalProfile(profile);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3500);
     } catch (err) {
